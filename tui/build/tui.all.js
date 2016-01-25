@@ -13,7 +13,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 	}
 
 	var TUI = {
-		version: '1.1.6'
+		version: '1.1.7'
 	};
 
 	/**
