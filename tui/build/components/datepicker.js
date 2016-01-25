@@ -1,8 +1,8 @@
-'use strict';
-
 (function () {
 	var DatePickerComp = React.createClass({
-		getInitialState: function getInitialState() {
+		displayName: 'DatePickerComp',
+
+		getInitialState: function () {
 			var date = new Date();
 			return {
 				className: 'show',
@@ -11,20 +11,20 @@
 				daysObj: []
 			};
 		},
-		componentDidMount: function componentDidMount() {
+		componentDidMount: function () {
 			if (this.isMounted()) {
 				this.setState({
 					daysObj: this.renderDays()
 				});
 			}
 		},
-		componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
+		componentWillReceiveProps: function (nextProps) {
 			if (nextProps.className && nextProps.className.length > 0) {
 				this.setState({ className: nextProps.className });
 			}
 		},
 		// 获取月份的天数
-		getMonthDays: function getMonthDays(year, month) {
+		getMonthDays: function (year, month) {
 			var days = 0;
 
 			if (month === 2) {
@@ -38,7 +38,7 @@
 			return days;
 		},
 		// 渲染目标日期的天数
-		renderDays: function renderDays(year, month) {
+		renderDays: function (year, month) {
 			year = year || this.state.year;
 			month = month || this.state.month;
 
@@ -72,7 +72,7 @@
 			return daysObj;
 		},
 		// 文本框赋值
-		setDate: function setDate(e) {
+		setDate: function (e) {
 			e.preventDefault();
 
 			if (e.target.dataset.day !== '') {
@@ -82,7 +82,7 @@
 			}
 		},
 		// 上个月
-		prevMonth: function prevMonth(e) {
+		prevMonth: function (e) {
 			e.preventDefault();
 
 			var year = this.state.year,
@@ -102,7 +102,7 @@
 			});
 		},
 		// 下个月
-		nextMonth: function nextMonth(e) {
+		nextMonth: function (e) {
 			e.preventDefault();
 
 			var year = this.state.year,
@@ -121,12 +121,12 @@
 				daysObj: this.renderDays(year, month)
 			});
 		},
-		close: function close(e) {
+		close: function (e) {
 			e.preventDefault();
 
 			this.setState({ className: 'hide' });
 		},
-		render: function render() {
+		render: function () {
 			return React.createElement(
 				'div',
 				{ className: 'panel panel-default ' + this.state.className },
@@ -241,7 +241,7 @@
 		}
 	});
 
-	var datePicker = function datePicker(e, formId) {
+	var datePicker = function (e, formId) {
 		var datePickerDOM = document.getElementById('tui-datepicker');
 
 		if (!datePickerDOM) {

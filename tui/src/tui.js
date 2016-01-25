@@ -559,7 +559,7 @@
 					textarea: $('#' + this.props.field.field),
   					toolbar: toolbar,  //工具栏 
   					upload: {  
-			            url: '/upload', //文件上传的接口地址  
+			            url: TUI.config.simditor.url, //文件上传的接口地址  
 			            params: null, //键值对,指定文件上传接口的额外参数,上传的时候随文件一起提交  
 			            fileKey: 'fileDataFileName', //服务器端获取文件数据的参数名  
 			            connectionCount: 3,  
@@ -1596,6 +1596,13 @@
 	TUI.Loading = Loading;
 	// 工具类
 	TUI.Utils = Utils;
+	// 系统配置
+	TUI.config = {
+		simditor: {
+			// 上传路径
+			url: '/upload'
+		}
+	};
 
     if (typeof module !== 'undefined' && typeof exports === 'object') {
         module.exports = TUI;
