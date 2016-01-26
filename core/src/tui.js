@@ -1,5 +1,5 @@
 /**
- * TUI v1.0
+ * TUI
  */
 ;(function(){
 	if (typeof jQuery === 'undefined' || typeof React === 'undefined') {
