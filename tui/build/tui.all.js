@@ -1,8 +1,4 @@
-'use strict';
-
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.constructor === Symbol ? "symbol" : typeof obj; }
 
 /**
  * TUI v1.0
@@ -24,7 +20,9 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * EntitySelect: input text 子组件
   */
 	var EntityDetail = React.createClass({
-		getInitialState: function getInitialState() {
+		displayName: 'EntityDetail',
+
+		getInitialState: function () {
 			var fields = this.props.entity.fields,
 			    fieldsState = {};
 
@@ -37,7 +35,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				fields: fieldsState
 			};
 		},
-		create: function create() {
+		create: function () {
 			var entity = this.props.entity;
 
 			try {
@@ -68,7 +66,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 							url: url,
 							data: $('#' + formId).serialize(),
 							dataType: 'JSON',
-							success: function success(result) {
+							success: function (result) {
 								Loading({ className: 'hide' });
 								if (callback(result) === 'success') {
 									TUI.success('保存成功');
@@ -78,10 +76,10 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 									TUI.danger('保存失败');
 								}
 							},
-							error: function error(xhr, _error, obj) {
+							error: function (xhr, error, obj) {
 								Loading({ className: 'hide' });
-								TUI.danger(url + '远程调用异常［' + _error + ', ' + obj + '］');
-								throw new Error(url + '远程调用异常［' + _error + ', ' + obj + '］');
+								TUI.danger(url + '远程调用异常［' + error + ', ' + obj + '］');
+								throw new Error(url + '远程调用异常［' + error + ', ' + obj + '］');
 							}
 						});
 					} else {
@@ -93,7 +91,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				throw new Error('保存实体配置有误，' + e);
 			}
 		},
-		validators: function validators() {
+		validators: function () {
 			var fields = this.props.entity.fields,
 			   
 			// 序列化表单数据
@@ -116,7 +114,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				    disabled = field.disabled === undefined ? false : field.disabled,
 				    readOnly = field.readOnly === undefined ? false : field.readOnly;
 
-				if ((disabled === false || readOnly === false) && (typeof validators === 'undefined' ? 'undefined' : _typeof(validators)) === 'object') {
+				if ((disabled === false || readOnly === false) && typeof validators === 'object') {
 					var value = data[field.field],
 					    notEmpty = validators.notEmpty,
 					    remote = validators.remote,
@@ -129,14 +127,14 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 					}
 
 					// 非空
-					if ((typeof notEmpty === 'undefined' ? 'undefined' : _typeof(notEmpty)) === 'object' && value.length < 1) {
+					if (typeof notEmpty === 'object' && value.length < 1) {
 						fieldsState[field.field] = { message: notEmpty.message || field.text + '不能为空' };
 						this.setState({ fields: fieldsState });
 
 						inconformityNum++;
 					}
 					// 远程方法验证 返回json格式 {valid: true}
-					else if ((typeof remote === 'undefined' ? 'undefined' : _typeof(remote)) === 'object') {
+					else if (typeof remote === 'object') {
 
 							$.ajax({
 								type: 'GET',
@@ -154,9 +152,9 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 										this.setState({ fields: fieldsState });
 									}
 								}).bind(this),
-								error: function error(xhr, _error2, obj) {
-									TUI.danger('TUI: remote url[' + remote.url + ']远程调用异常，' + _error2 + ', ' + obj);
-									throw new Error('TUI: remote url[' + remote.url + ']远程调用异常，' + _error2 + ', ' + obj);
+								error: function (xhr, error, obj) {
+									TUI.danger('TUI: remote url[' + remote.url + ']远程调用异常，' + error + ', ' + obj);
+									throw new Error('TUI: remote url[' + remote.url + ']远程调用异常，' + error + ', ' + obj);
 								}
 							});
 						}
@@ -169,7 +167,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				return false;
 			}
 		},
-		render: function render() {
+		render: function () {
 			var className = 'form-horizontal ' + this.props.className,
 			    entityData = this.props.entityData,
 			   
@@ -179,7 +177,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			// 主键值
 			keyValue = '';
 
-			if ((typeof entityData === 'undefined' ? 'undefined' : _typeof(entityData)) === 'object' && entityData[key] !== '') {
+			if (typeof entityData === 'object' && entityData[key] !== '') {
 				keyValue = entityData[key];
 			}
 
@@ -237,7 +235,9 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * 实体字段
   */
 	var EntityField = React.createClass({
-		render: function render() {
+		displayName: 'EntityField',
+
+		render: function () {
 			var entityData = this.props.entityData,
 			    field = this.props.field,
 			    type = field.type || 'text',
@@ -279,7 +279,9 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * 添加，修改
   */
 	var EntityHandle = React.createClass({
-		customHandle: function customHandle(e) {
+		displayName: 'EntityHandle',
+
+		customHandle: function (e) {
 			// 处理方法返回值，返回success则刷新页面
 			var handleRet = this.props.custom[e.target.dataset.customid].handle(this.props.entityData);
 
@@ -287,7 +289,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				this.props.backList(true);
 			}
 		},
-		render: function render() {
+		render: function () {
 			var entityData = this.props.entityData,
 			    keyValue = this.props.keyValue,
 			    update = this.props.update,
@@ -352,12 +354,14 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * 表单组件之input
   */
 	var EntityText = React.createClass({
-		getInitialState: function getInitialState() {
+		displayName: 'EntityText',
+
+		getInitialState: function () {
 			return {
 				value: ''
 			};
 		},
-		shouldComponentUpdate: function shouldComponentUpdate(nextProps, nextState) {
+		shouldComponentUpdate: function (nextProps, nextState) {
 			if (nextProps.keyValue !== this.props.keyValue || this.state.value !== nextState.value) {
 				var value = nextState.value;
 
@@ -370,10 +374,10 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			}
 			return false;
 		},
-		entityTextChangeHandle: function entityTextChangeHandle(e) {
+		entityTextChangeHandle: function (e) {
 			this.setState({ value: e.target.value });
 		},
-		render: function render() {
+		render: function () {
 			var field = this.props.field,
 			    entityData = this.props.entityData;
 
@@ -389,7 +393,9 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * 表单组件之select
   */
 	var EntitySelect = React.createClass({
-		getInitialState: function getInitialState() {
+		displayName: 'EntitySelect',
+
+		getInitialState: function () {
 			return {
 				value: '',
 				options: {
@@ -397,11 +403,11 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				}
 			};
 		},
-		componentDidMount: function componentDidMount() {
+		componentDidMount: function () {
 			var options = this.props.field.options;
 			// 是字符串或非数组，表示select需要远程加载
 			if (typeof options === 'string' || options instanceof Array === false) {
-				var isObj = (typeof options === 'undefined' ? 'undefined' : _typeof(options)) === 'object',
+				var isObj = typeof options === 'object',
 				    url = isObj ? options.url : options;
 
 				$.get(url, (function (result) {
@@ -420,7 +426,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				}).bind(this));
 			}
 		},
-		shouldComponentUpdate: function shouldComponentUpdate(nextProps, nextState) {
+		shouldComponentUpdate: function (nextProps, nextState) {
 			if (nextProps.keyValue !== this.props.keyValue || this.state.value !== nextState.value) {
 				var value = nextState.value;
 
@@ -433,10 +439,10 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			}
 			return false;
 		},
-		entitySelectChangeHandle: function entitySelectChangeHandle(e) {
+		entitySelectChangeHandle: function (e) {
 			this.setState({ value: e.target.value });
 		},
-		render: function render() {
+		render: function () {
 			var field = this.props.field;
 
 			if (field.options instanceof Array) {
@@ -471,12 +477,14 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * 表单组件之radio
   */
 	var EntityRadio = React.createClass({
-		getInitialState: function getInitialState() {
+		displayName: 'EntityRadio',
+
+		getInitialState: function () {
 			return {
 				value: ''
 			};
 		},
-		shouldComponentUpdate: function shouldComponentUpdate(nextProps, nextState) {
+		shouldComponentUpdate: function (nextProps, nextState) {
 			if (nextProps.keyValue !== this.props.keyValue || this.state.value !== nextState.value) {
 				var value = nextState.value;
 
@@ -489,10 +497,10 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			}
 			return false;
 		},
-		entityRadioChangeHandle: function entityRadioChangeHandle(e) {
+		entityRadioChangeHandle: function (e) {
 			this.setState({ value: e.target.value });
 		},
-		render: function render() {
+		render: function () {
 			var field = this.props.field,
 			    value = '';
 
@@ -531,12 +539,14 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * 表单组件之textarea
   */
 	var EntityTextarea = React.createClass({
-		getInitialState: function getInitialState() {
+		displayName: 'EntityTextarea',
+
+		getInitialState: function () {
 			return {
 				value: ''
 			};
 		},
-		shouldComponentUpdate: function shouldComponentUpdate(nextProps, nextState) {
+		shouldComponentUpdate: function (nextProps, nextState) {
 			if (nextProps.keyValue !== this.props.keyValue || this.state.value !== nextState.value) {
 				var value = nextState.value;
 
@@ -549,10 +559,10 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			}
 			return false;
 		},
-		entityTextareaChangeHandle: function entityTextareaChangeHandle(e) {
+		entityTextareaChangeHandle: function (e) {
 			this.setState({ value: e.target.value });
 		},
-		render: function render() {
+		render: function () {
 			var field = this.props.field;
 
 			if (this.props.keyValue === '') {
@@ -567,12 +577,14 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * 表单组件之编辑器
   */
 	var EntityEditor = React.createClass({
-		getInitialState: function getInitialState() {
+		displayName: 'EntityEditor',
+
+		getInitialState: function () {
 			return {
 				editor: {}
 			};
 		},
-		shouldComponentUpdate: function shouldComponentUpdate(nextProps, nextState) {
+		shouldComponentUpdate: function (nextProps, nextState) {
 			if (nextProps.keyValue !== this.props.keyValue || this.state.value !== nextState.value) {
 				var value = nextState.value;
 
@@ -588,7 +600,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			}
 			return false;
 		},
-		componentDidMount: function componentDidMount() {
+		componentDidMount: function () {
 			// 编辑器DOM渲染后开始实例化
 			if (this.isMounted()) {
 				var toolbar = ['title', 'bold', 'italic', 'underline', 'strikethrough', 'color', '|', 'ol', 'ul', 'blockquote', 'code', 'table', '|', 'link', 'image', 'hr', '|', 'indent', 'outdent'];
@@ -597,7 +609,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 					textarea: $('#' + this.props.field.field),
 					toolbar: toolbar, //工具栏
 					upload: {
-						url: '/upload', //文件上传的接口地址 
+						url: TUI.config.simditor.url, //文件上传的接口地址 
 						params: null, //键值对,指定文件上传接口的额外参数,上传的时候随文件一起提交 
 						fileKey: 'fileDataFileName', //服务器端获取文件数据的参数名 
 						connectionCount: 3,
@@ -608,7 +620,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				this.setState({ editor: editor });
 			}
 		},
-		render: function render() {
+		render: function () {
 			var field = this.props.field;
 
 			if (this.props.keyValue === '') {
@@ -624,8 +636,10 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * Parent
   */
 	var TableComp = React.createClass({
+		displayName: 'TableComp',
+
 		// 初始化表格
-		getInitialState: function getInitialState() {
+		getInitialState: function () {
 			var searchbar = this.props.options.searchbar,
 			    toolbar = this.props.options.toolbar,
 			    searchbarCols = [],
@@ -637,7 +651,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			if (searchbar instanceof Array && searchbar.length > 0) {
 
 				for (var i = 0; i < searchbar.length; i++) {
-					if (_typeof(searchbar[i]) === 'object' && searchbar[i].field) {
+					if (typeof searchbar[i] === 'object' && searchbar[i].field) {
 						searchbarCols.push({ field: searchbar[i].field, type: searchbar[i].type || 'text' });
 					}
 				}
@@ -677,23 +691,23 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			};
 		},
 		// 初次调用表格
-		componentDidMount: function componentDidMount() {
+		componentDidMount: function () {
 			if (this.props.options.url) {
 				this._loadData(1);
 			}
 		},
-		componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
+		componentWillReceiveProps: function (nextProps) {
 			if (nextProps.options.refresh) {
 				this.refresh(this.state.currentPage);
 			}
 		},
 		// 分页按钮
-		_pagingClick: function _pagingClick(e) {
+		_pagingClick: function (e) {
 			e.preventDefault();
 			this._loadData(e.currentTarget.dataset.page);
 		},
 		// 返回列表
-		backList: function backList(isRefresh, currentPage) {
+		backList: function (isRefresh, currentPage) {
 			// 清空提示信息
 			$('#find-' + this.state.formId).find('.tui-error').text('');
 			this.setState({ isShowEntityDetail: false, entityData: {} });
@@ -705,16 +719,16 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			}
 		},
 		// 刷新
-		refresh: function refresh(currentPage) {
+		refresh: function (currentPage) {
 			this._loadData(this.state.currentPage);
 		},
 		// 改变分页最大显示数
-		changeMaxSize: function changeMaxSize(maxSize) {
+		changeMaxSize: function (maxSize) {
 			this.setState({ maxSize: maxSize });
 			this._loadData(this.state.currentPage, maxSize);
 		},
 		// 加载数据
-		_loadData: function _loadData(currentPage, maxSize) {
+		_loadData: function (currentPage, maxSize) {
 			Loading();
 
 			var url = this.props.options.url,
@@ -755,7 +769,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				dataType: 'JSON',
 				success: (function (result) {
 					Loading({ className: 'hide' });
-					if ((typeof result === 'undefined' ? 'undefined' : _typeof(result)) === 'object' && result.rows !== undefined && result.rowCount !== undefined) {
+					if (typeof result === 'object' && result.rows !== undefined && result.rowCount !== undefined) {
 
 						if (this.isMounted()) {
 
@@ -782,26 +796,26 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 						throw new Error('TUI Table 远程调用返回数据格式不正确［未检测到rows，rowCount］');
 					}
 				}).bind(this),
-				error: function error(xhr, _error3, obj) {
+				error: function (xhr, error, obj) {
 					Loading({ className: 'hide' });
-					TUI.danger('TUI Table 远程调用异常［' + _error3 + ', ' + obj + '］');
-					throw new Error('TUI Table 远程调用异常［' + _error3 + ', ' + obj + '］');
+					TUI.danger('TUI Table 远程调用异常［' + error + ', ' + obj + '］');
+					throw new Error('TUI Table 远程调用异常［' + error + ', ' + obj + '］');
 				}
 			});
 		},
 		// 删除事件
-		deleteHandle: function deleteHandle(retDelete) {
+		deleteHandle: function (retDelete) {
 			var refresh = this.refresh;
 
 			var modalProps = {
 				id: 'delModal',
 				title: '删除确认',
 				content: '<div class="alert alert-warning">确定要删除该条纪录吗？</div>',
-				confirm: function confirm() {
+				confirm: function () {
 					$.ajax({
 						method: retDelete.method || 'get',
 						url: retDelete.url,
-						success: function success(result) {
+						success: function (result) {
 							// 成功返回success
 							if (retDelete.callback(result) === 'success') {
 								TUI.success('删除成功');
@@ -810,10 +824,10 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 								TUI.danger('删除失败');
 							}
 						},
-						error: function error(xhr, _error4, obj) {
+						error: function (xhr, error, obj) {
 							$('#' + modalProps.id).modal('hide');
-							TUI.danger(retDelete.url + '远程调用异常［' + _error4 + ', ' + obj + '］');
-							throw new Error(retDelete.url + '远程调用异常［' + _error4 + ', ' + obj + '］');
+							TUI.danger(retDelete.url + '远程调用异常［' + error + ', ' + obj + '］');
+							throw new Error(retDelete.url + '远程调用异常［' + error + ', ' + obj + '］');
 						}
 					});
 
@@ -824,7 +838,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			Modal(modalProps);
 		},
 		//  查看事件
-		findHandle: function findHandle(retFind) {
+		findHandle: function (retFind) {
 			Loading();
 
 			$.ajax({
@@ -840,29 +854,29 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 
 					this.goCreate(result);
 				}).bind(this),
-				error: function error(xhr, _error5, obj) {
+				error: function (xhr, error, obj) {
 					Loading({ className: 'hide' });
-					TUI.danger(retFind.url + '远程调用异常［' + _error5 + ', ' + obj + '］');
-					throw new Error(retFind.url + '远程调用异常［' + _error5 + ', ' + obj + '］');
+					TUI.danger(retFind.url + '远程调用异常［' + error + ', ' + obj + '］');
+					throw new Error(retFind.url + '远程调用异常［' + error + ', ' + obj + '］');
 				}
 			});
 		},
 		// 显示添加或编辑页面
-		goCreate: function goCreate(entityData) {
-			if (_typeof(this.props.entity) === 'object' && this.props.entity.fields instanceof Array) {
+		goCreate: function (entityData) {
+			if (typeof this.props.entity === 'object' && this.props.entity.fields instanceof Array) {
 				this.setState({ isShowEntityDetail: true, entityData: entityData });
 			} else {
 				TUI.danger('请先添加实体属性，使用说明请看［entity.fields］');
 			}
 		},
 		// checkbox处理事件
-		handlerCheckForParent: function handlerCheckForParent(index, isCheck) {
+		handlerCheckForParent: function (index, isCheck) {
 			this.state.rows[index].isCheck = isCheck;
 			this.setState({
 				rows: this.state.rows
 			});
 		},
-		checkAll: function checkAll(isCheck) {
+		checkAll: function (isCheck) {
 			this.state.rows.map(function (row, key) {
 				row.isCheck = isCheck;
 
@@ -873,7 +887,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			this.setState({ rows: this.state.rows, tableDataProps: this.state.tableDataProps });
 		},
 		// 渲染表格和分页
-		render: function render() {
+		render: function () {
 			var entityDetail = '';
 
 			if (this.props.entity) {
@@ -914,10 +928,12 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * Children
   */
 	var SearchBar = React.createClass({
-		dateFocus: function dateFocus(e) {
+		displayName: 'SearchBar',
+
+		dateFocus: function (e) {
 			TUI.datePicker(e, this.props.formId);
 		},
-		render: function render() {
+		render: function () {
 			// 添加按钮
 			var addBtn = React.createElement(
 				'button',
@@ -946,7 +962,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 					{ className: 'tui-searchbar' },
 					this.props.searchbar.map((function (obj, key) {
 
-						if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object') {
+						if (typeof obj === 'object') {
 							var type = obj.type || 'text',
 							    searchbarDOM = '';
 
@@ -972,7 +988,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 
 									// 是字符串或非数组，表示select需要远程加载
 									if (typeof options === 'string' || options instanceof Array === false) {
-										var isObj = (typeof options === 'undefined' ? 'undefined' : _typeof(options)) === 'object',
+										var isObj = typeof options === 'object',
 										    url = isObj ? options.url : options,
 										    textField = isObj ? options.textField : 'text',
 										    valueField = isObj ? options.valueField : 'value';
@@ -981,7 +997,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 											method: 'GET',
 											async: false,
 											url: url,
-											success: function success(result) {
+											success: function (result) {
 												optionsArr.push(React.createElement(
 													'option',
 													{ value: '' },
@@ -1012,8 +1028,8 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 													' '
 												);
 											},
-											error: function error(xhr, _error6, obj) {
-												TUI.danger(url + '远程调用异常［' + _error6 + ', ' + obj + '］');
+											error: function (xhr, error, obj) {
+												TUI.danger(url + '远程调用异常［' + error + ', ' + obj + '］');
 											}
 										});
 										break;
@@ -1127,7 +1143,9 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * Children
   */
 	var ToolBar = React.createClass({
-		render: function render() {
+		displayName: 'ToolBar',
+
+		render: function () {
 			return React.createElement(
 				'div',
 				{ className: 'tui-toolbar' },
@@ -1182,10 +1200,12 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * Children
   */
 	var TableData = React.createClass({
-		_checkAll: function _checkAll(e) {
+		displayName: 'TableData',
+
+		_checkAll: function (e) {
 			this.props.checkAll(e.target.checked);
 		},
-		render: function render() {
+		render: function () {
 			if (!this.props.rows || !this.props.options) {
 				return React.createElement(
 					'p',
@@ -1251,7 +1271,9 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * @type {[type]}
   */
 	var TableRow = React.createClass({
-		deleteHandle: function deleteHandle(e) {
+		displayName: 'TableRow',
+
+		deleteHandle: function (e) {
 			e.preventDefault();
 
 			var rowHandles = this.props.rowHandles;
@@ -1259,7 +1281,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			if (rowHandles && typeof this.props.rowHandles.delete === 'function') {
 				var retDelete = rowHandles.delete(this.props.row);
 
-				if ((typeof retDelete === 'undefined' ? 'undefined' : _typeof(retDelete)) === 'object' && retDelete.url) {
+				if (typeof retDelete === 'object' && retDelete.url) {
 					this.props.deleteHandle(retDelete);
 				} else {
 					TUI.danger('删除事件缺少返回值［url］');
@@ -1268,7 +1290,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				TUI.danger('请配置删除事件，参考属性［rowHandles.delete］');
 			}
 		},
-		findHandle: function findHandle(e) {
+		findHandle: function (e) {
 			e.preventDefault();
 
 			var rowHandles = this.props.rowHandles;
@@ -1276,7 +1298,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			if (rowHandles && typeof this.props.rowHandles.find === 'function') {
 				var retFind = rowHandles.find(this.props.row);
 
-				if ((typeof retFind === 'undefined' ? 'undefined' : _typeof(retFind)) === 'object' && retFind.url) {
+				if (typeof retFind === 'object' && retFind.url) {
 					this.props.findHandle(retFind);
 				} else {
 					TUI.danger('查看事件缺少返回值［url］');
@@ -1285,19 +1307,19 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				TUI.danger('请配置查看事件，参考属性［rowHandles.find］');
 			}
 		},
-		handlerCheck: function handlerCheck() {
+		handlerCheck: function () {
 			var isCheck = !this.props.row.isCheck;
 			this.props.handlerCheckForParent(this.props.index, isCheck);
 		},
 		// 自定义操作
-		customHandles: function customHandles(e) {
+		customHandles: function (e) {
 			e.preventDefault();
 			this.props.rowHandles.custom[e.currentTarget.dataset.customid].handle(this.props.row);
 			// if (handleRet && handleRet === 'success') {
 			// 	this.props.refresh();
 			// }
 		},
-		render: function render() {
+		render: function () {
 			var rowHandles = this.props.rowHandles,
 			    rowHandlesDOM = [];
 
@@ -1438,10 +1460,12 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * Children
   */
 	var Pagination = React.createClass({
-		changeMaxSize: function changeMaxSize() {
+		displayName: 'Pagination',
+
+		changeMaxSize: function () {
 			this.props.changeMaxSize(this.refs.maxSize.value);
 		},
-		render: function render() {
+		render: function () {
 
 			// 总纪录数
 			var rowCount = Number(this.props.rowCount) || 0,
@@ -1615,8 +1639,8 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 	/**
   * 封装表格
   */
-	var Table = function Table(options, entity) {
-		if ((typeof options === 'undefined' ? 'undefined' : _typeof(options)) === 'object' && options.container && options.container.length > 0) {
+	var Table = function (options, entity) {
+		if (typeof options === 'object' && options.container && options.container.length > 0) {
 
 			var targetContainer = document.getElementById(options.container);
 
@@ -1641,12 +1665,14 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * TUI Modal 模态框组件
   */
 	var _Modal = React.createClass({
-		confirm: function confirm() {
+		displayName: '_Modal',
+
+		confirm: function () {
 			if (this.props.confirm() === 'success') {
 				$('#' + this.props.id).modal('hide');
 			}
 		},
-		render: function render() {
+		render: function () {
 			var content = { __html: this.props.content },
 			    confirmBtn = '';
 
@@ -1716,7 +1742,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 		}
 	});
 
-	var Modal = function Modal(modalProps) {
+	var Modal = function (modalProps) {
 		var modalDOM = document.getElementById('tui-modal-container');
 
 		var _modalProps = {
@@ -1744,7 +1770,9 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
   * 弹出提示信息，如成功，失败
   */
 	var AlertModal = React.createClass({
-		render: function render() {
+		displayName: 'AlertModal',
+
+		render: function () {
 			return React.createElement(
 				'span',
 				{ className: this.props.type },
@@ -1753,7 +1781,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 		}
 	});
 
-	var Alert = function Alert(obj) {
+	var Alert = function (obj) {
 		var alertDOM = document.createElement('div');
 		alertDOM.className = 'tui-alert-modal';
 		document.body.appendChild(alertDOM);
@@ -1764,19 +1792,19 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 		}, 4000);
 	};
 
-	var success = function success(msg) {
+	var success = function (msg) {
 		this.Alert({ type: 'success', msg: msg });
 	};
 
-	var danger = function danger(msg) {
+	var danger = function (msg) {
 		this.Alert({ type: 'danger', msg: msg });
 	};
 
-	var warning = function warning(msg) {
+	var warning = function (msg) {
 		this.Alert({ type: 'warning', msg: msg });
 	};
 
-	var info = function info(msg) {
+	var info = function (msg) {
 		this.Alert({ type: 'info', msg: msg });
 	};
 
@@ -1784,7 +1812,9 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
      * 加载提示框
   */
 	var LoadingModal = React.createClass({
-		render: function render() {
+		displayName: 'LoadingModal',
+
+		render: function () {
 			return React.createElement(
 				'div',
 				{ className: 'tui-loading-parent ' + this.props.className },
@@ -1803,7 +1833,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 		}
 	});
 
-	var Loading = function Loading(obj) {
+	var Loading = function (obj) {
 		var loadingDOM = document.getElementsByClassName('tui-loading-container'),
 		    dom = '';
 		if (loadingDOM.length === 0) {
@@ -1820,7 +1850,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 	// 常用工具类
 	var Utils = {
 		// 日期转换 毫秒转
-		dateFormat: function dateFormat(value, style) {
+		dateFormat: function (value, style) {
 			if (value) {
 				var dateFormat = new Date(value),
 				    style = style || '',
@@ -1850,7 +1880,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				return '';
 			}
 		},
-		getElementLeft: function getElementLeft(e) {
+		getElementLeft: function (e) {
 			e = e.target;
 
 			var actualLeft = e.offsetLeft;
@@ -1863,7 +1893,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 
 			return actualLeft;
 		},
-		getElementTop: function getElementTop(e) {
+		getElementTop: function (e) {
 			e = e.target;
 
 			var actualTop = e.offsetTop;
@@ -1891,8 +1921,15 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 	TUI.Loading = Loading;
 	// 工具类
 	TUI.Utils = Utils;
+	// 系统配置
+	TUI.config = {
+		simditor: {
+			// 上传路径
+			url: '/upload'
+		}
+	};
 
-	if (typeof module !== 'undefined' && (typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) === 'object') {
+	if (typeof module !== 'undefined' && typeof exports === 'object') {
 		module.exports = TUI;
 	} else if (typeof define === 'function' && (define.amd || define.cmd)) {
 		define(function () {
@@ -1904,11 +1941,11 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 }).call(function () {
 	return this || (typeof window !== 'undefined' ? window : global);
 });
-'use strict';
-
 (function () {
 	var DatePickerComp = React.createClass({
-		getInitialState: function getInitialState() {
+		displayName: 'DatePickerComp',
+
+		getInitialState: function () {
 			var date = new Date();
 			return {
 				className: 'show',
@@ -1917,20 +1954,20 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				daysObj: []
 			};
 		},
-		componentDidMount: function componentDidMount() {
+		componentDidMount: function () {
 			if (this.isMounted()) {
 				this.setState({
 					daysObj: this.renderDays()
 				});
 			}
 		},
-		componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
+		componentWillReceiveProps: function (nextProps) {
 			if (nextProps.className && nextProps.className.length > 0) {
 				this.setState({ className: nextProps.className });
 			}
 		},
 		// 获取月份的天数
-		getMonthDays: function getMonthDays(year, month) {
+		getMonthDays: function (year, month) {
 			var days = 0;
 
 			if (month === 2) {
@@ -1944,7 +1981,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			return days;
 		},
 		// 渲染目标日期的天数
-		renderDays: function renderDays(year, month) {
+		renderDays: function (year, month) {
 			year = year || this.state.year;
 			month = month || this.state.month;
 
@@ -1978,7 +2015,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			return daysObj;
 		},
 		// 文本框赋值
-		setDate: function setDate(e) {
+		setDate: function (e) {
 			e.preventDefault();
 
 			if (e.target.dataset.day !== '') {
@@ -1988,7 +2025,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			}
 		},
 		// 上个月
-		prevMonth: function prevMonth(e) {
+		prevMonth: function (e) {
 			e.preventDefault();
 
 			var year = this.state.year,
@@ -2008,7 +2045,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 			});
 		},
 		// 下个月
-		nextMonth: function nextMonth(e) {
+		nextMonth: function (e) {
 			e.preventDefault();
 
 			var year = this.state.year,
@@ -2027,12 +2064,12 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 				daysObj: this.renderDays(year, month)
 			});
 		},
-		close: function close(e) {
+		close: function (e) {
 			e.preventDefault();
 
 			this.setState({ className: 'hide' });
 		},
-		render: function render() {
+		render: function () {
 			return React.createElement(
 				'div',
 				{ className: 'panel panel-default ' + this.state.className },
@@ -2147,7 +2184,7 @@ function _typeof(obj) { return obj && typeof Symbol !== "undefined" && obj.const
 		}
 	});
 
-	var datePicker = function datePicker(e, formId) {
+	var datePicker = function (e, formId) {
 		var datePickerDOM = document.getElementById('tui-datepicker');
 
 		if (!datePickerDOM) {

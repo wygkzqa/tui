@@ -20,12 +20,14 @@
     "url": "git+https://github.com/wygkzqa/TUI.git"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/wygkzqa/TUI/issues"
   },
   "homepage": "https://github.com/wygkzqa/TUI#readme",
   "dependencies": {
-    "babel-preset-react": "^6.3.13"
+    "babel-preset-react": "^6.3.13",
+    "browser-sync": "^2.11.1",
+    "yargs": "^3.32.0"
   }
 }

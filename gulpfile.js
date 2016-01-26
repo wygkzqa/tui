@@ -8,7 +8,9 @@ var gulp = require('gulp'),
 	// JS代码检测
 	jshint = require('gulp-jshint'),
 	// 重命名
-	rename = require('gulp-rename');
+	rename = require('gulp-rename'),
+	yargs = require('yargs').argv,
+	browserSync = require('browser-sync');
 
 gulp.task('jshint', function() {
 	return gulp.src('./tui/build/tui.js')
@@ -60,5 +62,28 @@ gulp.task('minify-simditor', function() {
 				.pipe(gulp.dest('./simditor'));
 });
 
+gulp.task('minify-concat-tui', ['minify-concat-tui-css', 'minify-concat-tui-js']);
 
-gulp.task('default', ['minify-concat-tui-css', 'minify-concat-tui-js'], function() {});
+gulp.task('start', function () {
+    yargs.p = yargs.p || 8080;
+    browserSync.init(['./example/html/**', './example/js/**'], {
+        server: {
+            baseDir: ['example', 'tui'],
+            index: '/html/index.html'
+        },
+        ui: {
+            port: yargs.p + 1,
+            weinre: {
+                port: yargs.p + 2
+            }
+        },
+        port: yargs.p,
+        startPath: '/'
+    });
+});
+
+gulp.task('default', function() {
+	if (yargs.s) {
+        gulp.start('server');
+    }
+});
