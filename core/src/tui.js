@@ -1594,6 +1594,7 @@
 	TUI.warning = warning;
 	TUI.info = info;
 	TUI.Loading = Loading;
+	TUI.loading = Loading;
 	// 工具类
 	TUI.Utils = Utils;
 	// 系统配置

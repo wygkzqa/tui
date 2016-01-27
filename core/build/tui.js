@@ -1919,6 +1919,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	TUI.warning = warning;
 	TUI.info = info;
 	TUI.Loading = Loading;
+	TUI.loading = Loading;
 	// 工具类
 	TUI.Utils = Utils;
 	// 系统配置

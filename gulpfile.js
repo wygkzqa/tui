@@ -13,22 +13,22 @@ var gulp = require('gulp'),
 	browserSync = require('browser-sync');
 
 gulp.task('jshint', function() {
-	return gulp.src('./tui/build/tui.js')
+	return gulp.src('./core/build/tui.js')
 				.pipe(jshint())
 				.pipe(jshint.reporter('default'));
 });
 
 // 压缩TUI JS
 gulp.task('minify-tui', function() {
-	return gulp.src('./tui/build/tui.js')
+	return gulp.src('./core/build/tui.js')
 		.pipe(uglify())
 		.pipe(rename({suffix: '.min'}))
-		.pipe(gulp.dest('./tui/build'));
+		.pipe(gulp.dest('./core/build'));
 });
 
 // 压缩合并TUI CSS
 gulp.task('minify-concat-tui-css', function() {
-	var url = './tui/css/';
+	var url = './core/css/';
 
 	return gulp.src([url + 'tui.css', url + 'components/datepicker.css'])
 				.pipe(concat('tui.all.css'))
@@ -40,7 +40,7 @@ gulp.task('minify-concat-tui-css', function() {
 
 // 压缩合并TUI JS
 gulp.task('minify-concat-tui-js', ['minify-concat-tui-css'], function() {
-	var tuiUrl = './tui/build/';
+	var tuiUrl = './core/build/';
 
 	return gulp.src([tuiUrl + 'tui.js', tuiUrl + 'components/datepicker.js'])
 				.pipe(concat('tui.all.js'))
@@ -65,10 +65,10 @@ gulp.task('minify-simditor', function() {
 gulp.task('minify-concat-tui', ['minify-concat-tui-css', 'minify-concat-tui-js']);
 
 gulp.task('start', function () {
-    yargs.p = yargs.p || 8080;
+    yargs.p = yargs.p || 8081;
     browserSync.init(['./example/html/**', './example/js/**'], {
         server: {
-            baseDir: ['example', 'tui'],
+            baseDir: ['example', 'core'],
             index: '/html/index.html'
         },
         ui: {

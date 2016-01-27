@@ -10,6 +10,7 @@
 	<link href="http://cdn.bootcss.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
 	<!-- TUI CSS -->
 	<link rel="stylesheet" type="text/css" href="/css/tui.all.min.css">
+	<link rel="stylesheet" type="text/css" href="/css/components/tree.css">
 </head>
 <body>
 
@@ -18,10 +19,12 @@
 		<div class="col-md-3">
 			<ul style="margin-top: 10px;">
 				<li><a href="#exampleDOM">表格</a></li>
+				<li><a href="#treeDOM">树</a></li>
 			</ul>
 		</div>
 		<div class="col-md-9">
 			<div id="exampleDOM" class="row"></div>
+			<div id="treeDOM"></div>
 		</div>
 	</div>
 </div>
@@ -36,7 +39,8 @@
 <script src="http://cdn.bootcss.com/react/0.14.6/react.min.js"></script>
 <script src="http://cdn.bootcss.com/react/0.14.6/react-dom.min.js"></script>
 <!-- TUI核心 JS -->
-<script src="/build/tui.all.js"></script>
-<script src="/js/example.js"></script>
+<script src="/build/tui.all.min.js"></script>
+<script src="/build/components/tree.js"></script>
+<script src="/js/build/example.js"></script>
 </body>
 </html>
