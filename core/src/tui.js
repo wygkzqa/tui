@@ -7,7 +7,7 @@
 	}
 
 	var TUI = {
-		version: '1.1.7'
+		version: '1.1.9'
 	};
 
 	/**
@@ -718,6 +718,7 @@
 			}		
 
 			$.ajax({
+				method: this.props.options.method? this.props.options.method: 'GET',
 				url: url,
 				data: ajaxData,
 				dataType: 'JSON',

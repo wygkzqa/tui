@@ -9,7 +9,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	}
 
 	var TUI = {
-		version: '1.1.7'
+		version: '1.1.9'
 	};
 
 	/**
@@ -764,6 +764,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			}
 
 			$.ajax({
+				method: this.props.options.method ? this.props.options.method : 'GET',
 				url: url,
 				data: ajaxData,
 				dataType: 'JSON',
