@@ -9,7 +9,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	}
 
 	var TUI = {
-		version: '1.1.7'
+		version: '1.1.9'
 	};
 
 	/**
@@ -565,10 +565,10 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		render: function () {
 			var field = this.props.field;
 
-			if (this.props.keyValue === '') {
-				return React.createElement('textarea', { rows: '5', className: 'form-control', name: field.field, ref: field.field, placeholder: field.text });
-			} else {
+			if (this.props.keyValue) {
 				return React.createElement('textarea', { rows: '5', className: 'form-control', name: field.field, ref: field.field, placeholder: field.text, value: this.state.value, onChange: this.entityTextareaChangeHandle, disabled: field.disabled || false, readOnly: field.readOnly || false });
+			} else {
+				return React.createElement('textarea', { rows: '5', className: 'form-control', name: field.field, ref: field.field, placeholder: field.text, defaultValue: '' });
 			}
 		}
 	});
@@ -1322,7 +1322,11 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		},
 		render: function () {
 			var rowHandles = this.props.rowHandles,
-			    rowHandlesDOM = [];
+			    rowHandlesDOM = [],
+			   
+			// 自定义操作DOM
+			customHandles = rowHandles.custom,
+			    customHandlesDOM = [];
 
 			if (rowHandles) {
 				// 查看
@@ -1334,20 +1338,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					));
 				}
 
-				// 删除
-				if (typeof rowHandles.delete === 'function') {
-					rowHandlesDOM.push(React.createElement(
-						'a',
-						{ href: 'javascript:;', className: 'tui-mr5', title: '删除', onClick: this.deleteHandle, style: { 'marginRight': '5px' } },
-						React.createElement('i', { className: 'fa fa-trash-o fa-lg' })
-					));
-				}
-
-				var customHandles = rowHandles.custom,
-				    customHandlesDOM = [];
-
+				// 自定义操作
 				if (rowHandles.custom && customHandles instanceof Array) {
-
 					for (var i = 0; i < customHandles.length; i++) {
 						var custom = customHandles[i];
 
@@ -1357,12 +1349,29 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 							React.createElement(
 								'a',
 								{ href: 'javascript:;', onClick: this.customHandles, 'data-customid': i },
-								React.createElement('i', { className: custom.className ? custom.className : '' }),
+								React.createElement('i', { className: custom.iconClass ? custom.iconClass : '' }),
 								' ',
 								custom.text
 							)
 						));
 					}
+				}
+
+				// 删除
+				if (typeof rowHandles.delete === 'function') {
+					customHandlesDOM.push(React.createElement(
+						'li',
+						null,
+						React.createElement(
+							'a',
+							{ href: 'javascript:;', className: 'tui-mr5', title: '删除', onClick: this.deleteHandle, style: { 'marginRight': '5px' } },
+							React.createElement('i', { className: 'fa fa-trash-o' }),
+							' 删除'
+						)
+					));
+				}
+
+				if (customHandlesDOM.length > 0) {
 					rowHandlesDOM.push(React.createElement(
 						'div',
 						{ className: 'btn-group' },
@@ -1665,8 +1674,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	/**
   * TUI Modal 模态框组件
   */
-	var _Modal = React.createClass({
-		displayName: '_Modal',
+	var ModalComp = React.createClass({
+		displayName: 'ModalComp',
 
 		confirm: function () {
 			if (this.props.confirm() === 'success') {
@@ -1760,7 +1769,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			document.body.appendChild(modalDOM);
 		}
 
-		ReactDOM.render(React.createElement(_Modal, _modalProps), modalDOM);
+		ReactDOM.render(React.createElement(ModalComp, _modalProps), modalDOM);
 
 		setTimeout(function () {
 			$('#' + _modalProps.id).modal('show');
@@ -1789,8 +1798,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		ReactDOM.render(React.createElement(AlertModal, { type: obj.type, msg: obj.msg }), alertDOM);
 
 		setTimeout(function () {
+			alertDOM.className = 'hide';
 			document.body.removeChild(alertDOM);
-		}, 4000);
+		}, 3800);
 	};
 
 	var success = function (msg) {

@@ -12,10 +12,11 @@
 		},
 		componentDidMount: function() {
 			TUI.loading({text: '正在加载菜单...'});
+			var url = this.props.url;
 			
 			$.ajax({
 				async: false,
-				url: this.props.url,
+				url: url,
 				dataType: 'JSON',
 				success: function(result) {
 					TUI.loading({ className: 'hide' });
@@ -58,10 +59,18 @@
 				isParent = e.target.dataset.parent;
 				checkedVals = this.state.checkedVals,
 				childCheckedStatus = this.state.childCheckedStatus,
-				index = '';
+				index = e.target.dataset.index;
 
 			// 复选框为父级
 			if (isParent === 'true') {
+				if (isChecked) {
+					childCheckedStatus[index] = true;
+					this.pushCheckedVals(checkedVals, e.target.value);
+				} else {
+					childCheckedStatus[index] = false;
+					this.removeChecked(checkedVals, e.target.value);
+				}
+
 				var childNodes = e.target.parentNode.nextSibling.childNodes;
 				for (var i = 0; i < childNodes.length; i++) {
 					var childCheckbox = childNodes[i].getElementsByTagName('INPUT')[0],
@@ -78,7 +87,6 @@
 			} 
 			// 子级
 			else {
-				index = e.target.dataset.index;
 
 				if (isChecked) {
 					childCheckedStatus[index] = true;
@@ -123,7 +131,7 @@
 							var parentCheckboxDOM = '';
 
 							if (this.props.checkbox == true) {
-								parentCheckboxDOM = <input type="checkbox" defaultValue={parent[this.props.checkboxValueField]} onChange={this.changeCheckbox} data-parent="true" style={{'marginRight': '3'}} />
+								parentCheckboxDOM = <input type="checkbox" defaultValue={parent[this.props.checkboxValueField]} onChange={this.changeCheckbox} data-parent="true" data-index={key} style={{'marginRight': '3'}} />
 							}
 
 							return (

@@ -30,7 +30,7 @@ gulp.task('minify-tui', function() {
 gulp.task('minify-concat-tui-css', function() {
 	var url = './core/css/';
 
-	return gulp.src([url + 'tui.css', url + 'components/datepicker.css'])
+	return gulp.src([url + 'tui.css', url + 'components/datepicker.css', url + 'components/tree.css'])
 				.pipe(concat('tui.all.css'))
 				.pipe(gulp.dest(url))
 				.pipe(rename({suffix: '.min'}))

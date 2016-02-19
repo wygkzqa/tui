@@ -510,13 +510,13 @@
 		render: function() {
 			var field = this.props.field;
 
-			if (this.props.keyValue === '') {
+			if (this.props.keyValue) {
 				return (
-					<textarea rows="5" className="form-control" name={field.field} ref={field.field} placeholder={field.text} />
+					<textarea rows="5" className="form-control" name={field.field} ref={field.field} placeholder={field.text} value={this.state.value} onChange={this.entityTextareaChangeHandle} disabled={field.disabled || false} readOnly={field.readOnly || false}/>
 				);
 			} else {
 				return (
-					<textarea rows="5" className="form-control" name={field.field} ref={field.field} placeholder={field.text} value={this.state.value} onChange={this.entityTextareaChangeHandle} disabled={field.disabled || false} readOnly={field.readOnly || false}/>
+					<textarea rows="5" className="form-control" name={field.field} ref={field.field} placeholder={field.text} defaultValue=""/>
 				);
 			}
 		}
@@ -1175,7 +1175,10 @@
 		},
 		render: function() {
 			var rowHandles = this.props.rowHandles,
-				rowHandlesDOM = [];
+				rowHandlesDOM = [],
+				// 自定义操作DOM
+				customHandles = rowHandles.custom,
+				customHandlesDOM = [];
 
 			if (rowHandles) {
 				// 查看
@@ -1183,21 +1186,21 @@
 					rowHandlesDOM.push(<a href="javascript:;" className="tui-mr5" title="详情" onClick={this.findHandle}><i className="fa fa-edit fa-lg"></i></a>);
 				}
 
-				// 删除
-				if (typeof rowHandles.delete === 'function') {
-					rowHandlesDOM.push(<a href="javascript:;" className="tui-mr5" title="删除" onClick={this.deleteHandle} style={{'marginRight': '5px'}}><i className="fa fa-trash-o fa-lg"></i></a>);
-				}
-
-				var customHandles = rowHandles.custom,
-					customHandlesDOM = [];
-
+				// 自定义操作
 				if (rowHandles.custom && customHandles instanceof Array) {
-
 					for (var i = 0; i < customHandles.length; i++) {
 						var custom = customHandles[i];
 
-						customHandlesDOM.push(<li><a href="javascript:;" onClick={this.customHandles} data-customid={i}><i className={custom.className? custom.className: ''}></i>&nbsp;{custom.text}</a></li>);
+						customHandlesDOM.push(<li><a href="javascript:;" onClick={this.customHandles} data-customid={i}><i className={custom.iconClass? custom.iconClass: ''}></i>&nbsp;{custom.text}</a></li>);
 					}
+				}
+
+				// 删除
+				if (typeof rowHandles.delete === 'function') {
+					customHandlesDOM.push(<li><a href="javascript:;" className="tui-mr5" title="删除" onClick={this.deleteHandle} style={{'marginRight': '5px'}}><i className="fa fa-trash-o"></i>&nbsp;删除</a></li>);
+				}
+				
+				if (customHandlesDOM.length > 0) {
 					rowHandlesDOM.push(<div className="btn-group">
 										  <a href="javascript:;" className="dropdown-toggle tui-dropdown-menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 										    更多 <span className="caret"></span>
@@ -1392,7 +1395,7 @@
 	/**
 	 * TUI Modal 模态框组件
 	 */
-	var _Modal = React.createClass({
+	var ModalComp = React.createClass({
 		confirm: function() {
 			if (this.props.confirm() === 'success') {
 				$('#' + this.props.id).modal('hide');
@@ -1449,7 +1452,7 @@
 			document.body.appendChild(modalDOM);
 		}
 
-		ReactDOM.render(<_Modal {..._modalProps} />, modalDOM);
+		ReactDOM.render(<ModalComp {..._modalProps} />, modalDOM);
 
 		setTimeout(function() {
 			$('#' + _modalProps.id).modal('show');
@@ -1474,8 +1477,9 @@
 		ReactDOM.render(React.createElement(AlertModal, { type: obj.type, msg: obj.msg }), alertDOM);
 
 		setTimeout(function() {
+			alertDOM.className = 'hide';
 			document.body.removeChild(alertDOM);
-		}, 4000);
+		}, 3800);
 	};
 
 	var success = function(msg) {

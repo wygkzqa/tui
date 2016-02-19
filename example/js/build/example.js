@@ -23,11 +23,13 @@
 			},
 			custom: [{
 				text: '自定义操作',
+				iconClass: 'fa fa-cog',
 				handle: function (row) {
 					TUI.success('这是自定义操作，可以获得当前记录');
 				}
 			}, {
 				text: '自定义操作啊啊',
+				iconClass: 'fa fa-cog',
 				handle: function (row) {
 					TUI.success('这是自定义操作，可以获得当前记录');
 				}
@@ -73,13 +75,13 @@
 		},
 		render: function () {
 			var treeOptions = {
-				url: 'http://192.168.1.191:8081/tree.json',
+				url: 'http://localhost:8081/tree.json',
 				container: 'treeDOM',
 				// 是否复选框
 				checkbox: true,
 				// 复选框值字段
 				checkboxValueField: 'id',
-				// 父级组件提供一个接口“setCheckedVals”，可以获取已选中的值
+				// 父级组件提供一个接口“setCheckedVals”，获取已选中的值
 				setCheckedVals: this.setCheckedVals
 			};
 
