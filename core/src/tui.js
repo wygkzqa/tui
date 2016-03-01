@@ -56,27 +56,55 @@
 					if (url && typeof callback === 'function') {
 						Loading({ text: '正在处理' });
 
-						$.ajax({
-							method: method || 'POST',
-							url: url,
-							data: $('#' + formId).serialize(),
-							dataType: 'JSON',
-							success: function(result) {
-								Loading({ className: 'hide' });
-								if (callback(result) === 'success') {
-									TUI.success('保存成功');
-									$('#' + formId + ' button[type=reset]').click();
-									backList(true, currentPage);
-								} else {
-									TUI.danger('保存失败');
+						// 异步提交表单，使用jQuery.form
+						if (entity.ajaxSubmit && entity.ajaxSubmit === true) {
+
+							var ajaxFormOptions = {
+								method: method || 'POST',
+								url: url,
+								dataType: 'JSON',
+								success: function(result) {
+									Loading({ className: 'hide' });
+									if (callback(result) === 'success') {
+										TUI.success('保存成功');
+										$('#' + formId + ' button[type=reset]').click();
+										backList(true, currentPage);
+									} else {
+										TUI.danger('保存失败');
+									}
+								},
+								error: function(xhr, error, obj) {
+									Loading({ className: 'hide' });
+									TUI.danger(url + '远程调用异常［' + error + ', ' + obj + '］');
+									throw new Error(url + '远程调用异常［' + error + ', ' + obj + '］');
 								}
-							},
-							error: function(xhr, error, obj) {
-								Loading({ className: 'hide' });
-								TUI.danger(url + '远程调用异常［' + error + ', ' + obj + '］');
-								throw new Error(url + '远程调用异常［' + error + ', ' + obj + '］');
-							}
-						});
+							};
+
+							$('#' + formId).ajaxSubmit(ajaxFormOptions);
+						} else {
+
+							$.ajax({
+								method: method || 'POST',
+								url: url,
+								data: $('#' + formId).serialize(),
+								dataType: 'JSON',
+								success: function(result) {
+									Loading({ className: 'hide' });
+									if (callback(result) === 'success') {
+										TUI.success('保存成功');
+										$('#' + formId + ' button[type=reset]').click();
+										backList(true, currentPage);
+									} else {
+										TUI.danger('保存失败');
+									}
+								},
+								error: function(xhr, error, obj) {
+									Loading({ className: 'hide' });
+									TUI.danger(url + '远程调用异常［' + error + ', ' + obj + '］');
+									throw new Error(url + '远程调用异常［' + error + ', ' + obj + '］');
+								}
+							});
+						}
 					} else {
 						TUI.danger('保存实体配置有误，使用说明请查看［entity.create和entity.update］');
 					}
@@ -168,14 +196,19 @@
 				// 主键
 				key = this.props.entity.key,
 				// 主键值
-				keyValue = '';
+				keyValue = '',
+				// 表单提交方式
+				method = '';
 
 			if (typeof entityData === 'object' && entityData[key] !== '') {
 				keyValue = entityData[key];
+				method = this.props.entity.update.method;
+			} else {
+				method = this.props.entity.create.method;
 			}
 
 			return (
-				<form id={this.props.formId} className={className}>
+				<form id={this.props.formId} className={className} encType="multipart/form-data" method={method}>
 					<input type="hidden" ref={key} name={key} value={keyValue}/>
 					<div className="form-group">
 						<a href="javascript:;" className="col-sm-2" onClick={this.props.backList}><i className="fa fa-arrow-left"></i>&nbsp;返回列表</a>
@@ -595,7 +628,11 @@
 			var searchbar = this.props.options.searchbar,
 				toolbar = this.props.options.toolbar,
 				searchbarCols = [],
-				searchbarProps= {},
+				searchbarProps= {
+					goCreate: this.goCreate,
+					// 是否有添加按钮
+					hasAdd: this.props.entity && this.props.entity.create? true: false
+				},
 				pagination = this.props.options.pagination,
 				formId = this.props.options.formId || 'tui-' + Math.random().toString(36).substr(2);
 
@@ -611,13 +648,12 @@
 				searchbarProps.searchbar = searchbar;
 				searchbarProps.searchbarCols = searchbarCols;
 				searchbarProps._pagingClick = this._pagingClick;
-				searchbarProps.goCreate = this.goCreate;
-				searchbarProps.formId = formId;
-				// 是否有添加按钮
-				searchbarProps.hasAdd = this.props.entity && this.props.entity.create? true: false;
+				searchbarProps.formId = formId;				
 				searchbar = <SearchBar {...searchbarProps} />;
 			} else {
-				searchbar = <SearchBar searchbar={[]} goCreate={this.goCreate} hasAdd={this.props.entity && this.props.entity.create? true: false} />;
+
+				searchbarProps.searchbar = [];
+				searchbar = <SearchBar {...searchbarProps} />;
 			}
 
 			// 初始化功能性工具栏
@@ -1197,7 +1233,7 @@
 
 				// 删除
 				if (typeof rowHandles.delete === 'function') {
-					customHandlesDOM.push(<li><a href="javascript:;" className="tui-mr5" title="删除" onClick={this.deleteHandle} style={{'marginRight': '5px'}}><i className="fa fa-trash-o"></i>&nbsp;删除</a></li>);
+					customHandlesDOM.push(<li><a href="javascript:;" className="tui-mr5" title="删除" onClick={this.deleteHandle} style={{'marginRight': '5px'}}><i className="fa fa-trash-o fa-fw"></i>&nbsp;删除</a></li>);
 				}
 				
 				if (customHandlesDOM.length > 0) {

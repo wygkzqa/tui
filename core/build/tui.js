@@ -643,7 +643,11 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			var searchbar = this.props.options.searchbar,
 			    toolbar = this.props.options.toolbar,
 			    searchbarCols = [],
-			    searchbarProps = {},
+			    searchbarProps = {
+				goCreate: this.goCreate,
+				// 是否有添加按钮
+				hasAdd: this.props.entity && this.props.entity.create ? true : false
+			},
 			    pagination = this.props.options.pagination,
 			    formId = this.props.options.formId || 'tui-' + Math.random().toString(36).substr(2);
 
@@ -659,13 +663,12 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 				searchbarProps.searchbar = searchbar;
 				searchbarProps.searchbarCols = searchbarCols;
 				searchbarProps._pagingClick = this._pagingClick;
-				searchbarProps.goCreate = this.goCreate;
 				searchbarProps.formId = formId;
-				// 是否有添加按钮
-				searchbarProps.hasAdd = this.props.entity && this.props.entity.create ? true : false;
 				searchbar = React.createElement(SearchBar, searchbarProps);
 			} else {
-				searchbar = React.createElement(SearchBar, { searchbar: [], goCreate: this.goCreate, hasAdd: this.props.entity && this.props.entity.create ? true : false });
+
+				searchbarProps.searchbar = [];
+				searchbar = React.createElement(SearchBar, searchbarProps);
 			}
 
 			// 初始化功能性工具栏
