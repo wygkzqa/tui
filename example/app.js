@@ -11,7 +11,7 @@ app.use(express.static('public'));
 app.set(express.static('views'));
 app.set('view engine', 'xtpl');
 app.use(bodyParser.urlencoded({extended: true}));
-app.use('/backend', require('./routes/backend/index'));
+app.use('/be', require('./routes/backend/index'));
 
 // 错误处理页
 app.use(function(err, req, res, next) {
