@@ -12,7 +12,7 @@ open localhost:3003/backend
 simditor文件夹为TUI依赖的编辑器插件，如果用到编辑器，页面引入simditor.all.min.js和simditor.css即可。
 
 # 谁在用
-[中赣核普惠金融](www.cjxnfs.com)
+[中赣核普惠金融](https://www.cjxnfs.com)
 
 # 交流学习
 TUI使用说明文档及交流学习请加入我们的QQ群: 479877359, 欢迎评论和吐槽
