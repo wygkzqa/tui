@@ -68,7 +68,7 @@ gulp.task('start', function () {
     yargs.p = yargs.p || 8081;
     browserSync.init(['./example/html/**', './example/js/**'], {
         server: {
-            baseDir: ['example', 'core'],
+            baseDir: ['example', 'version'],
             index: '/html/index.html'
         },
         ui: {
