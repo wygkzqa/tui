@@ -116,8 +116,8 @@
             <div class="tab-content tui-tab-content">
                 <div role="tabpanel" class="tab-pane fade in active" id="home" style="padding-top: 20px;">
                     欢迎查看TUI Example 演示!<br>
-                    欢迎评论和吐槽<br>
-                    欢迎你一起帮助TUI成长<br>
+                    欢迎评论和吐槽!<br>
+                    欢迎你一起帮助TUI成长!<br>
                     QQ交流群: 479877359
                 </div>
             </div>
