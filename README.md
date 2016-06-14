@@ -13,7 +13,7 @@ simditor文件夹为TUI依赖的编辑器插件，如果用到编辑器，页面
 
 # 谁在用
 [中赣核普惠金融](https://www.cjxnfs.com)、 [小贵宾旅行](http://www.lvctrip.com)、[豫满全球跨境电商综合孵化平台-黄河云商](http://www.yellowrivercloud.com)、
-[豫满全球跨境电商综合孵化平台-豫满全球](http://www.henan-global.com)
+[豫满全球跨境电商综合孵化平台-豫满全球](http://www.henan-global.com)、 [克劳德-EasyWork](http://www.qintrend.net)
 
 # 交流学习
 TUI使用说明文档及交流学习请加入我们的QQ群: 479877359, 欢迎评论和吐槽
