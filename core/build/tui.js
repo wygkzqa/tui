@@ -1,7 +1,7 @@
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 /**
- * TUI
+ * TUI - 权限验证版
  */
 ;(function () {
 	if (typeof jQuery === 'undefined' || typeof React === 'undefined') {
@@ -9,7 +9,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	}
 
 	var TUI = {
-		version: '1.1.9'
+		version: '0.20.2'
 	};
 
 	/**
@@ -61,37 +61,68 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					if (url && typeof callback === 'function') {
 						Loading({ text: '正在处理' });
 
-						$.ajax({
-							method: method || 'POST',
-							url: url,
-							data: $('#' + formId).serialize(),
-							dataType: 'JSON',
-							success: function (result) {
-								Loading({ className: 'hide' });
-								if (callback(result) === 'success') {
-									TUI.success('保存成功');
-									$('#' + formId + ' button[type=reset]').click();
-									backList(true, currentPage);
-								} else {
-									TUI.danger('保存失败');
+						// 异步提交表单，使用jQuery.form
+						if (entity.ajaxSubmit && entity.ajaxSubmit === true) {
+
+							var ajaxFormOptions = {
+								method: method || 'POST',
+								url: url,
+								dataType: 'JSON',
+								success: function (result) {
+									Loading({ className: 'hide' });
+									if (callback(result) === 'success') {
+										TUI.success('保存成功');
+										$('#' + formId + ' button[type=reset]').click();
+										backList(true, currentPage);
+									} else {
+										TUI.danger('保存失败');
+									}
+								},
+								error: function (xhr, error, obj) {
+									Loading({ className: 'hide' });
+									TUI.danger(url + '远程调用异常［' + error + ', ' + obj + '］');
+									throw new Error(url + '远程调用异常［' + error + ', ' + obj + '］');
 								}
-							},
-							error: function (xhr, error, obj) {
-								Loading({ className: 'hide' });
-								TUI.danger(url + '远程调用异常［' + error + ', ' + obj + '］');
-								throw new Error(url + '远程调用异常［' + error + ', ' + obj + '］');
-							}
-						});
+							};
+
+							$('#' + formId).ajaxSubmit(ajaxFormOptions);
+						} else {
+
+							$.ajax({
+								method: method || 'POST',
+								url: url,
+								data: $('#' + formId).serialize(),
+								dataType: 'JSON',
+								success: function (result) {
+									Loading({ className: 'hide' });
+									if (callback(result) === 'success') {
+										TUI.success('保存成功');
+										$('#' + formId + ' button[type=reset]').click();
+										backList(true, currentPage);
+									} else {
+										TUI.danger('保存失败');
+									}
+								},
+								error: function (xhr, error, obj) {
+									Loading({ className: 'hide' });
+									TUI.danger(url + '远程调用异常［' + error + ', ' + obj + '］');
+									throw new Error(url + '远程调用异常［' + error + ', ' + obj + '］');
+								}
+							});
+						}
 					} else {
+						Loading({ className: 'hide' });
 						TUI.danger('保存实体配置有误，使用说明请查看［entity.create和entity.update］');
 					}
 				}
 			} catch (e) {
+				Loading({ className: 'hide' });
 				TUI.danger('保存实体配置有误，' + e);
 				throw new Error('保存实体配置有误，' + e);
 			}
 		},
 		validators: function () {
+			// 实体字段
 			var fields = this.props.entity.fields,
 			   
 			// 序列化表单数据
@@ -110,11 +141,22 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 			for (var f in fields) {
 				var field = fields[f],
-				    validators = field.validators,
-				    disabled = field.disabled === undefined ? false : field.disabled,
-				    readOnly = field.readOnly === undefined ? false : field.readOnly;
+				   
+				// 验证器
+				validators = field.validators,
+				   
+				// 元素不是否可用
+				disabled = field.disabled === undefined ? false : field.disabled,
+				   
+				// 元素只读状态
+				readOnly = field.readOnly === undefined ? false : field.readOnly;
 
-				if ((disabled === false || readOnly === false) && typeof validators === 'object') {
+				// 如果元素不可用或只读，直接跳过该元素
+				if (disabled || readOnly) {
+					continue;
+				}
+
+				if (typeof validators === 'object') {
 					var value = data[field.field],
 					    notEmpty = validators.notEmpty,
 					    remote = validators.remote,
@@ -175,15 +217,24 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			key = this.props.entity.key,
 			   
 			// 主键值
-			keyValue = '';
+			keyValue = entityData ? entityData[key] : '',
+			   
+			// 表单提交方式
+			method = '';
 
-			if (typeof entityData === 'object' && entityData[key] !== '') {
-				keyValue = entityData[key];
+			if (this.props.entity.update && this.props.entity.create) {
+				if (typeof entityData === 'object' && entityData[key] !== '') {
+					method = this.props.entity.update.method;
+				} else if (this.props.entity.create) {
+					method = this.props.entity.create.method || 'POST';
+				} else {
+					method = 'POST';
+				}
 			}
 
 			return React.createElement(
 				'form',
-				{ id: this.props.formId, className: className },
+				{ id: this.props.formId, className: className, encType: 'multipart/form-data', method: method },
 				React.createElement('input', { type: 'hidden', ref: key, name: key, value: keyValue }),
 				React.createElement(
 					'div',
@@ -211,7 +262,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 							React.createElement(EntityField, {
 								keyValue: keyValue,
 								field: f,
-								entityData: entityData }),
+								entityData: entityData,
+								formId: this.props.formId }),
 							React.createElement(
 								'span',
 								{ className: 'tui-error' },
@@ -226,7 +278,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					create: this.create,
 					update: this.props.entity.update,
 					entityData: entityData,
-					custom: this.props.entity.custom || [] })
+					custom: this.props.entity.custom || [],
+					roleButtons: this.props.roleButtons
+				})
 			);
 		}
 	});
@@ -251,7 +305,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 			switch (type) {
 				case 'text':
-					fieldDOM = React.createElement(EntityText, fieldProps);
+					fieldDOM = React.createElement(EntityText, _extends({}, fieldProps, { formId: this.props.formId }));
 					break;
 				case 'select':
 					fieldDOM = React.createElement(EntitySelect, fieldProps);
@@ -293,15 +347,22 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			var entityData = this.props.entityData,
 			    keyValue = this.props.keyValue,
 			    update = this.props.update,
-			    createOrUpdateDOM = '';
+			    createOrUpdateDOM = '',
+			    custom = this.props.custom,
+			   
+			// 自定义操作
+			customButtons = [],
+			   
+			// 按钮权限
+			roleButtons = this.props.roleButtons || {};
 
-			if (keyValue === undefined) {
+			if (roleButtons['create'] && keyValue === undefined) {
 				createOrUpdateDOM = React.createElement(
 					'button',
 					{ type: 'button', className: 'ebtn ebtn-success ebtn-rounded tui-mr5', onClick: this.props.create },
 					'添加'
 				);
-			} else if (keyValue !== '' && update) {
+			} else if (roleButtons['update'] && keyValue !== '' && update) {
 
 				if (update.condition && typeof update.condition === 'function') {
 					// 如果有condition条件的话，符合条件的才有修改按钮，返回success表示符合
@@ -321,6 +382,19 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 				}
 			}
 
+			// 自定义操作按钮
+			for (var i = 0; i < custom.length; i++) {
+				var _custom = custom[i];
+
+				if (roleButtons[_custom.action]) {
+					customButtons.push(React.createElement(
+						'button',
+						{ type: 'button', className: 'tui-mr5 ' + _custom.className, onClick: this.customHandle, 'data-customid': i },
+						roleButtons[_custom.action].name
+					));
+				}
+			}
+
 			return React.createElement(
 				'div',
 				{ className: 'form-group' },
@@ -333,13 +407,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 						{ type: 'button', className: 'ebtn ebtn-default ebtn-rounded tui-mr5', onClick: this.props.backList },
 						'取消'
 					),
-					this.props.custom.map((function (c, key) {
-						return React.createElement(
-							'button',
-							{ key: key, type: 'button', className: 'tui-mr5 ' + c.className, onClick: this.customHandle, 'data-customid': key },
-							c.text
-						);
-					}).bind(this)),
+					customButtons,
 					React.createElement(
 						'button',
 						{ type: 'reset', style: { 'display': 'none' } },
@@ -377,11 +445,18 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		entityTextChangeHandle: function (e) {
 			this.setState({ value: e.target.value });
 		},
+		dateFocus: function (e) {
+			TUI.datePicker(e, this.props.formId);
+		},
 		render: function () {
 			var field = this.props.field,
 			    entityData = this.props.entityData;
 
-			if (this.props.keyValue !== '') {
+			if (this.props.type !== 'file' && this.props.keyValue !== '') {
+				if (this.props.type === 'date') {
+					return React.createElement('input', { type: 'text', className: 'form-control', name: field.field, ref: field.field, placeholder: field.placeholder || field.text, value: this.state.value, onFocus: this.dateFocus, onChange: this.entityTextChangeHandle, disabled: field.disabled || false, readOnly: field.readOnly || false });
+				}
+
 				return React.createElement('input', { type: this.props.type, className: 'form-control', name: field.field, ref: field.field, placeholder: field.placeholder || field.text, value: this.state.value, onChange: this.entityTextChangeHandle, disabled: field.disabled || false, readOnly: field.readOnly || false });
 			} else {
 				return React.createElement('input', { type: this.props.type, className: 'form-control', name: field.field, ref: field.field, placeholder: field.placeholder || field.text, defaultValue: '' });
@@ -492,7 +567,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					value = nextProps.entityData[nextProps.field.field];
 				}
 
-				this.setState({ value: value });
+				this.setState({ value: value + '' });
 				return true;
 			}
 			return false;
@@ -501,34 +576,25 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			this.setState({ value: e.target.value });
 		},
 		render: function () {
-			var field = this.props.field,
-			    value = '';
-
-			if (this.props.keyValue !== '') {
-				value = this.props.entityData[field.field];
-			}
+			var field = this.props.field;
 
 			return React.createElement(
 				'p',
-				{ className: 'form-control-static' },
+				null,
 				field.options.map((function (op, key) {
 					var radioDOM = '';
 
-					if (!value) {
-						radioDOM = React.createElement('input', { type: 'radio', ref: field.field, name: field.field, value: op.value });
-					} else {
+					if (this.props.keyValue !== '') {
 						radioDOM = React.createElement('input', { checked: this.state.value == op.value, type: 'radio', ref: field.field, name: field.field, value: op.value, onChange: this.entityRadioChangeHandle });
+					} else {
+						radioDOM = React.createElement('input', { type: 'radio', ref: field.field, name: field.field, value: op.value });
 					}
 					return React.createElement(
-						'span',
-						{ key: key, style: { 'marginRight': '10px' } },
-						React.createElement(
-							'label',
-							{ className: 'tui-label' },
-							op.text
-						),
+						'label',
+						{ key: key, className: 'radio-inline' },
+						radioDOM,
 						' ',
-						radioDOM
+						op.text
 					);
 				}).bind(this))
 			);
@@ -605,19 +671,23 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			if (this.isMounted()) {
 				var toolbar = ['title', 'bold', 'italic', 'underline', 'strikethrough', 'color', '|', 'ol', 'ul', 'blockquote', 'code', 'table', '|', 'link', 'image', 'hr', '|', 'indent', 'outdent'];
 
-				var editor = new Simditor({
-					textarea: $('#' + this.props.field.field),
-					toolbar: toolbar, //工具栏
-					upload: {
-						url: TUI.config.simditor.url, //文件上传的接口地址 
-						params: null, //键值对,指定文件上传接口的额外参数,上传的时候随文件一起提交 
-						fileKey: 'fileDataFileName', //服务器端获取文件数据的参数名 
-						connectionCount: 3,
-						leaveConfirm: '正在上传文件'
-					}
-				});
-
-				this.setState({ editor: editor });
+				try {
+					var editor = new Simditor({
+						textarea: $('#' + this.props.field.field),
+						toolbar: toolbar, //工具栏
+						upload: {
+							url: TUI.config.simditor.url, //文件上传的接口地址
+							params: null, //键值对,指定文件上传接口的额外参数,上传的时候随文件一起提交
+							fileKey: 'fileDataFileName', //服务器端获取文件数据的参数名
+							connectionCount: 3,
+							leaveConfirm: '正在上传文件'
+						}
+					});
+					this.setState({ editor: editor });
+				} catch (ex) {
+					TUI.danger('请引入simdirot相关文件');
+					console.error('请引入simdirot相关文件');
+				}
 			}
 		},
 		render: function () {
@@ -640,55 +710,24 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 		// 初始化表格
 		getInitialState: function () {
-			var searchbar = this.props.options.searchbar,
-			    toolbar = this.props.options.toolbar,
-			    searchbarCols = [],
-			    searchbarProps = {
-				goCreate: this.goCreate,
-				// 是否有添加按钮
-				hasAdd: this.props.entity && this.props.entity.create ? true : false
-			},
-			    pagination = this.props.options.pagination,
-			    formId = this.props.options.formId || 'tui-' + Math.random().toString(36).substr(2);
 
-			// 初始化筛选工具栏
-			if (searchbar instanceof Array && searchbar.length > 0) {
+			var searchbarProps = this.props.searchbar.searchbarProps,
+			    pagination = this.props.options.pagination;
 
-				for (var i = 0; i < searchbar.length; i++) {
-					if (typeof searchbar[i] === 'object' && searchbar[i].field) {
-						searchbarCols.push({ field: searchbar[i].field, type: searchbar[i].type || 'text' });
-					}
-				}
-
-				searchbarProps.searchbar = searchbar;
-				searchbarProps.searchbarCols = searchbarCols;
-				searchbarProps._pagingClick = this._pagingClick;
-				searchbarProps.formId = formId;
-				searchbar = React.createElement(SearchBar, searchbarProps);
-			} else {
-
-				searchbarProps.searchbar = [];
-				searchbar = React.createElement(SearchBar, searchbarProps);
-			}
-
-			// 初始化功能性工具栏
-			if (toolbar instanceof Array && toolbar.length > 0) {
-				toolbar = React.createElement(ToolBar, { toolbar: toolbar });
-			} else {
-				toolbar = React.createElement(ToolBar, { toolbar: [] });
-			}
+			searchbarProps.goCreate = this.goCreate;
+			searchbarProps._pagingClick = this._pagingClick;
 
 			return {
-				formId: formId,
+				formId: this.props.options.formId,
 				// 是否显示实体详情
 				isShowEntityDetail: false,
-				searchbar: searchbar,
-				toolbar: toolbar,
-				searchbarCols: searchbarCols,
+				searchbar: React.createElement(SearchBar, searchbarProps),
+				searchbarCols: this.props.searchbar.searchbarCols,
+				toolbar: React.createElement(ToolBar, this.props.toolbar.toolbarProps),
 				tableDataProps: {},
 				// 是否显示分页 默认true显示
 				pagination: typeof pagination === 'boolean' && pagination === true || typeof pagination === 'undefined' ? '正在加载分页...' : '',
-				// 当前页					
+				// 当前页
 				currentPage: 1,
 				maxSize: typeof this.props.options.maxSize === 'number' ? this.props.options.maxSize : 10
 			};
@@ -766,9 +805,16 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 				}
 			}
 
+			if (typeof this.props.options.submitBefore === 'function') {
+				this.props.options.submitBefore({
+					data: ajaxData
+				});
+			}
+
 			$.ajax({
 				method: this.props.options.method ? this.props.options.method : 'GET',
 				url: url,
+				contentType: this.props.options.contentType || 'application/x-www-form-urlencoded',
 				data: ajaxData,
 				dataType: 'JSON',
 				success: (function (result) {
@@ -867,10 +913,16 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		},
 		// 显示添加或编辑页面
 		goCreate: function (entityData) {
-			if (typeof this.props.entity === 'object' && this.props.entity.fields instanceof Array) {
-				this.setState({ isShowEntityDetail: true, entityData: entityData });
+			// 是否自定义创建按钮事件，handle方法表示自定义事件
+			// 没有handle便走默认
+			if (!this.props.entity.create || !this.props.entity.create.handle) {
+				if (typeof this.props.entity === 'object' && this.props.entity.fields instanceof Array) {
+					this.setState({ isShowEntityDetail: true, entityData: entityData });
+				} else {
+					TUI.danger('请先添加实体属性，使用说明请看［entity.fields］');
+				}
 			} else {
-				TUI.danger('请先添加实体属性，使用说明请看［entity.fields］');
+				this.props.entity.create.handle();
 			}
 		},
 		// checkbox处理事件
@@ -892,7 +944,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		},
 		// 渲染表格和分页
 		render: function () {
-			var entityDetail = '';
+			var entityDetail = '',
+			    type = this.props.options.type ? this.props.options.type : 'table';
 
 			if (this.props.entity) {
 				entityDetail = React.createElement(EntityDetail, {
@@ -901,7 +954,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					backList: this.backList,
 					entity: this.props.entity,
 					entityData: this.state.entityData,
-					currentPage: this.state.currentPage });
+					currentPage: this.state.currentPage,
+					roleButtons: this.props.roleButtons
+				});
 			}
 
 			return React.createElement(
@@ -912,14 +967,29 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					{ id: this.state.formId, className: this.state.isShowEntityDetail ? 'hide' : 'show' },
 					this.state.searchbar,
 					this.state.toolbar,
-					React.createElement(TableData, _extends({
-						rows: this.state.rows
-					}, this.state.tableDataProps, {
-						handlerCheckForParent: this.handlerCheckForParent,
-						checkAll: this.checkAll,
-						deleteHandle: this.deleteHandle,
-						findHandle: this.findHandle,
-						refresh: this.refresh })),
+					React.createElement(
+						'div',
+						{ className: 'tui-table-div' },
+						React.createElement(
+							'table',
+							{ className: 'tui-table tui-table-hover' },
+							React.createElement(TableColsComp, {
+								columns: this.props.options.columns,
+								checkAll: this.checkAll,
+								isCheckAll: this.state.tableDataProps.isCheckAll
+							}),
+							React.createElement(TableData, _extends({
+								rows: this.state.rows
+							}, this.state.tableDataProps, {
+								handlerCheckForParent: this.handlerCheckForParent,
+								deleteHandle: this.deleteHandle,
+								findHandle: this.findHandle,
+								refresh: this.refresh,
+								roleButtons: this.props.roleButtons,
+								type: type
+							}))
+						)
+					),
 					this.state.pagination
 				),
 				entityDetail
@@ -939,15 +1009,16 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		},
 		render: function () {
 			// 添加按钮
-			var addBtn = React.createElement(
-				'button',
-				{ type: 'button', className: 'ebtn ebtn-success ebtn-rounded', onClick: this.props.goCreate },
-				React.createElement('span', { className: 'glyphicon glyphicon-plus', 'aria-hidden': 'true' }),
-				' 添加'
-			);
+			var roleButtons = this.props.roleButtons || {},
+			    addBtn = '';
 
-			if (!this.props.hasAdd) {
-				addBtn = '';
+			if (roleButtons['create'] && this.props.hasAdd) {
+				addBtn = React.createElement(
+					'button',
+					{ type: 'button', className: 'ebtn ebtn-success ebtn-rounded', onClick: this.props.goCreate },
+					React.createElement('i', { className: 'fa fa-plus' }),
+					' 添加'
+				);
 			}
 
 			if (this.props.searchbar.length === 0 && this.props.hasAdd) {
@@ -1018,7 +1089,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 												searchbarDOM = React.createElement(
 													'div',
-													{ className: 'form-group' },
+													{ className: 'form-group', key: key },
 													React.createElement(
 														'label',
 														{ htmlFor: obj.field },
@@ -1026,7 +1097,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 													),
 													React.createElement(
 														'select',
-														{ id: obj.field, name: obj.field, className: 'form-control', key: key },
+														{ id: obj.field, name: obj.field, className: 'form-control' },
 														optionsArr
 													),
 													' '
@@ -1055,7 +1126,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 										searchbarDOM = React.createElement(
 											'div',
-											{ className: 'form-group' },
+											{ className: 'form-group', key: key },
 											React.createElement(
 												'label',
 												{ htmlFor: obj.field },
@@ -1063,7 +1134,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 											),
 											React.createElement(
 												'select',
-												{ id: obj.field, name: obj.field, className: 'form-control', key: key },
+												{ id: obj.field, name: obj.field, className: 'form-control' },
 												optionsArr
 											),
 											' '
@@ -1124,7 +1195,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 						React.createElement(
 							'button',
 							{ type: 'button', className: 'ebtn ebtn-primary ebtn-rounded', onClick: this.props._pagingClick, 'data-page': '1' },
-							'查询'
+							React.createElement('i', { className: 'fa fa-search' }),
+							' 查询'
 						),
 						' ',
 						React.createElement(
@@ -1150,6 +1222,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		displayName: 'ToolBar',
 
 		render: function () {
+			var roleButtons = this.props.roleButtons || {};
+
 			return React.createElement(
 				'div',
 				{ className: 'tui-toolbar' },
@@ -1159,11 +1233,13 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 					switch (type) {
 						case 'button':
-							tbDOM = React.createElement(
-								'button',
-								{ className: (tb.className ? tb.className : 'btn btn-primary') + ' tui-mr5', type: 'button', onClick: tb.handle },
-								tb.text
-							);
+							if (roleButtons[tb.action]) {
+								tbDOM = React.createElement(
+									'button',
+									{ className: (tb.className ? tb.className : 'btn btn-primary') + ' tui-mr5', type: 'button', onClick: tb.handle },
+									roleButtons[tb.action].name
+								);
+							}
 							break;
 						case 'checkbox':
 							var id = tb.id || '',
@@ -1182,11 +1258,13 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 							);
 							break;
 						default:
-							tbDOM = React.createElement(
-								'button',
-								{ className: (tb.className ? tb.className : 'btn btn-primary') + ' tui-mr5', type: 'button', onClick: tb.handle },
-								tb.text
-							);
+							if (roleButtons[tb.action]) {
+								tbDOM = React.createElement(
+									'button',
+									{ className: (tb.className ? tb.className : 'btn btn-primary') + ' tui-mr5', type: 'button', onClick: tb.handle },
+									roleButtons[tb.action].name
+								);
+							}
 							break;
 					};
 					return React.createElement(
@@ -1200,72 +1278,219 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	});
 
 	/**
+     * 表格列组件
+     */
+	var TableColsComp = React.createClass({
+		displayName: 'TableColsComp',
+
+		render: function () {
+			return React.createElement(
+				'thead',
+				{ className: 'tui-thead-default' },
+				React.createElement(
+					'tr',
+					null,
+					this.props.columns.map((function (col, key) {
+						var colContent = col.text;
+
+						if (col.checkbox) {
+							colContent = React.createElement('input', { type: 'checkbox', checked: this.props.isCheckAll, onChange: this.props._checkAll });
+						}
+						return React.createElement(
+							'th',
+							{ key: key, style: { 'width': col.width ? col.width : 'auto' } },
+							colContent
+						);
+					}).bind(this)),
+					React.createElement('td', null)
+				)
+			);
+		}
+	});
+
+	/**
   * TUI Table 表格组件-表格数据渲染
   * Children
   */
 	var TableData = React.createClass({
 		displayName: 'TableData',
 
+		componentWillReceiveProps: function (nextProps) {
+			if (nextProps.rows) {
+				this.setState({ tableTree: nextProps.rows });
+			}
+		},
 		_checkAll: function (e) {
 			this.props.checkAll(e.target.checked);
+		},
+		/*
+   * 父级点击
+   */
+		parentClick: function (e) {
+			e.preventDefault();
+
+			var dataset = e.currentTarget.dataset,
+			    index = dataset.index.indexOf('-') === -1 ? dataset.index : dataset.index.split('-'),
+			    hierarchy = dataset.hierarchy,
+			    tableTree = this.state.tableTree,
+			   
+			// 父级状态默认收起
+			status = '';
+
+			// 最顶级展开
+			if (typeof index === 'string') {
+
+				status = tableTree[index].tableTreeStatus || 'hide';
+
+				if (status === 'hide') {
+					tableTree[index].tableTreeStatus = 'tui-show';
+				} else {
+					var children = tableTree[index].children;
+					tableTree[index].tableTreeStatus = 'hide';
+
+					// 隐藏二级
+					if (children instanceof Array) {
+						for (var i = 0; i < children.length; i++) {
+							if (children[i]) {
+								children[i].tableTreeChildStatus = 'hide';
+							}
+						}
+					}
+				}
+			} else {
+				// 二级的情况下，修改tableTreeChildStatus字段来控制三级的显示
+				if (hierarchy == '2') {
+					status = tableTree[index[0]].children[index[1]].tableTreeChildStatus || 'hide';
+
+					if (status === 'hide') {
+						tableTree[index[0]].children[index[1]].tableTreeChildStatus = 'tui-show';
+					} else {
+						tableTree[index[0]].children[index[1]].tableTreeChildStatus = 'hide';
+					}
+				} else {
+					status = tableTree[index[0]].children[index[1]].tableTreeStatus || 'hide';
+
+					if (status === 'hide') {
+						tableTree[index[0]].children[index[1]].tableTreeStatus = 'tui-show';
+					} else {
+						tableTree[index[0]].children[index[1]].tableTreeStatus = 'hide';
+					}
+				}
+			}
+
+			this.setState({ tableTree: tableTree });
 		},
 		render: function () {
 			if (!this.props.rows || !this.props.options) {
 				return React.createElement(
-					'p',
+					'tbody',
 					null,
-					'正在加载数据...'
+					React.createElement(
+						'tr',
+						null,
+						React.createElement(
+							'td',
+							null,
+							'正在加载数据...'
+						)
+					)
 				);
 			}
 
+			var type = this.props.type;
+
 			return React.createElement(
-				'div',
-				{ className: 'tui-table-div' },
-				React.createElement(
-					'table',
-					{ className: 'tui-table table-striped' },
-					React.createElement(
-						'thead',
-						{ className: 'tui-thead-default' },
-						React.createElement(
-							'tr',
-							null,
-							this.props.options.columns.map((function (col, key) {
-								var colContent = col.text;
+				'tbody',
+				{ className: 'tui-tbody-default' },
+				this.props.rows.map((function (row, key) {
+					row.isCheck = row.isCheck || false;
 
-								if (col.checkbox) {
-									colContent = React.createElement('input', { type: 'checkbox', checked: this.props.isCheckAll, onChange: this._checkAll });
-								}
-								return React.createElement(
-									'th',
-									{ key: key, style: { 'width': col.width ? col.width : 'auto' } },
-									colContent
-								);
-							}).bind(this)),
-							React.createElement('td', null)
-						)
-					),
-					React.createElement(
-						'tbody',
-						{ className: 'tui-tbody-default' },
-						this.props.rows.map((function (row, key) {
-							row.isCheck = row.isCheck || false;
+					var tableRowProps = {
+						type: type,
+						row: row,
+						rowHandles: this.props.options.rowHandles,
+						columns: this.props.options.columns,
+						index: key,
+						handlerCheckForParent: this.props.handlerCheckForParent,
+						deleteHandle: this.props.deleteHandle,
+						findHandle: this.props.findHandle,
+						refresh: this.props.refresh,
+						roleButtons: this.props.roleButtons
+					};
 
-							var tableRowProps = {
-								row: row,
-								rowHandles: this.props.options.rowHandles,
-								columns: this.props.options.columns,
-								index: key,
-								handlerCheckForParent: this.props.handlerCheckForParent,
-								deleteHandle: this.props.deleteHandle,
-								findHandle: this.props.findHandle,
-								refresh: this.props.refresh
+					// 标准表格
+					if (type === 'table') {
+						return React.createElement(TableRow, _extends({ key: key }, tableRowProps));
+					}
+					// 树形表格
+					else if (type === 'tableTree') {
+
+							var tableTreeProps = {
+								parentClick: this.parentClick
 							};
 
-							return React.createElement(TableRow, _extends({ key: key }, tableRowProps));
-						}).bind(this))
-					)
-				)
+							tableRowProps.tableTreeProps = tableTreeProps;
+
+							var childsArr = [React.createElement(TableRow
+							// 一级状态 控制二级
+							, _extends({ tableTreeStatus: this.state.tableTree[key].tableTreeStatus || 'hide',
+								hierarchy: 1,
+								isHighest: true,
+								isParent: true,
+								key: key
+							}, tableRowProps))],
+							    children = row.children;
+
+							// 确保子级为数组
+							if (children && children instanceof Array) {
+								// 二级
+								for (var i = 0; i < children.length; i++) {
+									if (children[i]) {
+										var _children = children[i].children;
+
+										tableRowProps.row = children[i];
+										tableRowProps.index = i;
+										tableRowProps.parentIndex = key;
+
+										if (_children && _children instanceof Array) {
+											childsArr.push(React.createElement(TableRow
+											// 二级状态
+											, _extends({ tableTreeStatus: this.state.tableTree[key].tableTreeStatus || 'hide'
+												// 控制三级的状态
+												, tableTreeChildStatus: this.state.tableTree[key].children[i].tableTreeChildStatus || 'hide',
+												hierarchy: 2,
+												isParent: true,
+												key: key + '-' + i
+											}, tableRowProps)));
+
+											// 三级
+											for (var j = 0; j < _children.length; j++) {
+												if (_children[j]) {
+													tableRowProps.row = _children[j];
+													tableRowProps.index = j;
+													tableRowProps.parentIndex = i;
+
+													childsArr.push(React.createElement(TableRow
+													// 三级状态
+													, _extends({ tableTreeStatus: this.state.tableTree[key].children[i].tableTreeChildStatus || 'hide',
+														hierarchy: 3,
+														key: key + '-' + i + '-' + j
+													}, tableRowProps)));
+												}
+											}
+										} else {
+											childsArr.push(React.createElement(TableRow, _extends({
+												tableTreeStatus: this.state.tableTree[key].tableTreeStatus || 'hide',
+												key: key + '-' + i
+											}, tableRowProps)));
+										}
+									}
+								}
+							}
+
+							return childsArr;
+						}
+				}).bind(this))
 			);
 		}
 	});
@@ -1277,6 +1502,55 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	var TableRow = React.createClass({
 		displayName: 'TableRow',
 
+		getInitialState: function () {
+			var status = this.props.tableTreeStatus;
+
+			return {
+				tableTreeProps: {
+					status: status,
+					parentStatusDOM: this.getParentStatusDOM(status)
+				}
+			};
+		},
+		componentWillReceiveProps: function (nextProps) {
+			if (this.props.type === 'tableTree') {
+
+				if (nextProps.tableTreeStatus !== this.props.tableTreeStatus || nextProps.tableTreeChildStatus !== this.props.tableTreeChildStatus) {
+
+					// 控制显示子级的状态
+					var status = nextProps.tableTreeStatus,
+					   
+					// 控制图标的状态
+					showHideStatus = this.props.hierarchy === 2 ? nextProps.tableTreeChildStatus : status;
+
+					var tableTreeProps = {
+						status: status,
+						parentStatusDOM: this.getParentStatusDOM(showHideStatus)
+					};
+
+					this.setState({ tableTreeProps: tableTreeProps });
+				}
+			}
+		},
+		/**
+   * 获取父级的状态DOM
+   */
+		getParentStatusDOM: function (status) {
+			return status === 'hide' ? React.createElement(
+				'span',
+				null,
+				React.createElement('i', { className: 'fa fa-angle-right tui-mr5' }),
+				React.createElement('i', { className: 'fa fa-folder-open-o tui-mr5' })
+			) : React.createElement(
+				'span',
+				null,
+				React.createElement('i', { className: 'fa fa-angle-down tui-mr5' }),
+				React.createElement('i', { className: 'fa fa-folder-open tui-mr5' })
+			);
+		},
+		/**
+   * 删除事件
+   */
 		deleteHandle: function (e) {
 			e.preventDefault();
 
@@ -1294,6 +1568,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 				TUI.danger('请配置删除事件，参考属性［rowHandles.delete］');
 			}
 		},
+		/**
+   * 查看事件
+   */
 		findHandle: function (e) {
 			e.preventDefault();
 
@@ -1319,21 +1596,38 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		customHandles: function (e) {
 			e.preventDefault();
 			this.props.rowHandles.custom[e.currentTarget.dataset.customid].handle(this.props.row);
-			// if (handleRet && handleRet === 'success') {
-			// 	this.props.refresh();
-			// }
 		},
 		render: function () {
 			var rowHandles = this.props.rowHandles,
 			    rowHandlesDOM = [],
 			   
 			// 自定义操作DOM
-			customHandles = rowHandles.custom,
-			    customHandlesDOM = [];
+			customHandles = rowHandles ? rowHandles.custom : [],
+			    customHandlesDOM = [],
+			   
+			// 按钮权限
+			roleButtons = this.props.roleButtons || {},
+			   
+			// 是否父级
+			isParent = this.props.isParent,
+			    isHighest = this.props.isHighest,
+			    parentDOM = this.props.type === 'tableTree' ? React.createElement('td', null) : undefined;
+
+			if (isParent) {
+				parentDOM = React.createElement(
+					'a',
+					{ href: 'javascript:;',
+						onClick: this.props.tableTreeProps.parentClick,
+						'data-index': typeof this.props.parentIndex === 'number' ? this.props.parentIndex + '-' + this.props.index : this.props.index,
+						'data-hierarchy': this.props.hierarchy
+					},
+					this.state.tableTreeProps.parentStatusDOM
+				);
+			}
 
 			if (rowHandles) {
 				// 查看
-				if (typeof rowHandles.find === 'function') {
+				if (roleButtons['find'] && typeof rowHandles.find === 'function') {
 					rowHandlesDOM.push(React.createElement(
 						'a',
 						{ href: 'javascript:;', className: 'tui-mr5', title: '详情', onClick: this.findHandle },
@@ -1346,30 +1640,33 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					for (var i = 0; i < customHandles.length; i++) {
 						var custom = customHandles[i];
 
-						customHandlesDOM.push(React.createElement(
-							'li',
-							null,
-							React.createElement(
-								'a',
-								{ href: 'javascript:;', onClick: this.customHandles, 'data-customid': i },
-								React.createElement('i', { className: custom.iconClass ? custom.iconClass : '' }),
-								' ',
-								custom.text
-							)
-						));
+						if (roleButtons[custom.action]) {
+							customHandlesDOM.push(React.createElement(
+								'li',
+								null,
+								React.createElement(
+									'a',
+									{ href: 'javascript:;', onClick: this.customHandles, 'data-customid': i },
+									React.createElement('i', { className: custom.iconClass ? custom.iconClass : '' }),
+									' ',
+									custom.text
+								)
+							));
+						}
 					}
 				}
 
 				// 删除
-				if (typeof rowHandles.delete === 'function') {
+				if (roleButtons['delete'] && typeof rowHandles.delete === 'function') {
 					customHandlesDOM.push(React.createElement(
 						'li',
 						null,
 						React.createElement(
 							'a',
-							{ href: 'javascript:;', className: 'tui-mr5', title: '删除', onClick: this.deleteHandle, style: { 'marginRight': '5px' } },
-							React.createElement('i', { className: 'fa fa-trash-o' }),
-							' 删除'
+							{ href: 'javascript:;', className: 'tui-mr5', title: roleButtons['delete'].name, onClick: this.deleteHandle, style: { 'marginRight': '5px' } },
+							React.createElement('i', { className: 'fa fa-trash-o fa-fw' }),
+							' ',
+							roleButtons['delete'].name
 						)
 					));
 				}
@@ -1395,69 +1692,78 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 			return React.createElement(
 				'tr',
-				null,
+				{ key: this.props.index,
+					'data-parent': this.props.hierarchy === 3 ? 'child_' + this.props.parentIndex : typeof this.props.parentIndex === 'number' ? 'parent_' + this.props.parentIndex : '',
+					className: this.props.type === 'table' || isHighest ? '' : this.state.tableTreeProps ? this.state.tableTreeProps.status : ''
+				},
 				this.props.columns.map((function (col, key) {
-					var row = this.props.row;
+					var row = this.props.row,
+					   
+					// 列值
+					// 如果是树形菜单并且是父级并且为第1列的话，把展开按钮加上
+					colVal = key === 0 && isParent ? parentDOM : '';
 
-					// 是否有处理方法
-					if (typeof col.handle === 'function') {
-						var handleVal = col.handle(row);
-
-						if (handleVal === undefined) {
-							console.error('TUI Table column["' + col.field + '"] is no return value.');
-						}
-
-						if (!col.field) {
-							var _html = { __html: handleVal };
-
-							return React.createElement('td', { key: key, dangerouslySetInnerHTML: _html });
-						}
-
+					if (!col.handle && col.field.indexOf('.') === -1 && !col.checkbox) {
 						return React.createElement(
 							'td',
 							{ key: key },
-							handleVal
+							colVal,
+							row[col.field]
 						);
-					}
-					// 是否多级属性
-					else if (col.field.indexOf('.') > 0) {
-							var _colArr = col.field.split('.'),
-							    _colVal = '';
+					} else {
+						// 是否有处理方法
+						if (typeof col.handle === 'function') {
+							colVal = col.handle(row);
 
-							try {
-								for (var i = 0; i < _colArr.length; i++) {
-									if (i === 0) {
-										_colVal = row[_colArr[i]];
-									} else {
-										_colVal = _colVal[_colArr[i]];
-									}
-								}
-
-								return React.createElement(
-									'td',
-									{ key: key },
-									_colVal
-								);
-							} catch (e) {
-								return React.createElement('td', { key: key });
+							if (colVal === undefined) {
+								console.error('TUI Table column["' + col.field + '"] is no return value.');
 							}
+
+							if (!col.field) {
+								var _html = { __html: colVal };
+
+								return React.createElement('td', { key: key, dangerouslySetInnerHTML: _html });
+							}
+
+							return React.createElement(
+								'td',
+								{ key: key },
+								colVal
+							);
 						}
-						// 是否有chexkbox
-						else if (col.checkbox) {
-								return React.createElement(
-									'td',
-									{ key: key },
-									React.createElement('input', { type: 'checkbox', name: col.field, value: row[col.field], checked: row.isCheck, onChange: this.handlerCheck })
-								);
-							}
-							// 默认
-							else {
+						// 是否多级属性
+						else if (col.field.indexOf('.') > 0) {
+								var _colArr = col.field.split('.'),
+								    _colVal = '';
+
+								try {
+									for (var i = 0; i < _colArr.length; i++) {
+										if (i === 0) {
+											_colVal = row[_colArr[i]];
+										} else {
+											_colVal = _colVal[_colArr[i]];
+										}
+									}
+
 									return React.createElement(
 										'td',
 										{ key: key },
-										row[col.field]
+										colVal,
+										_colVal
+									);
+								} catch (e) {
+									return React.createElement('td', { key: key });
+								}
+							}
+							// 是否有chexkbox
+							else if (col.checkbox) {
+									return React.createElement(
+										'td',
+										{ key: key },
+										React.createElement('input', { type: 'checkbox', name: col.field, value: row[col.field], checked: row.isCheck, onChange: this.handlerCheck })
 									);
 								}
+					}
 				}).bind(this)),
 				React.createElement(
 					'td',
@@ -1469,7 +1775,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	});
 
 	/**
-  * TUI Pagination 表格组件-分页组件 
+  * TUI Pagination 表格组件-分页组件
   * Children
   */
 	var Pagination = React.createClass({
@@ -1651,22 +1957,86 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 	/**
   * 封装表格
+  * @param tableProps: { options: [表格操作参数], entity: [实体操作参数], roleButtons: [权限按钮] }
   */
-	var Table = function (options, entity) {
-		if (typeof options === 'object' && options.container && options.container.length > 0) {
+	var Table = function (tableProps) {
+		var options = tableProps.options;
 
-			var targetContainer = document.getElementById(options.container);
+		if (typeof options === 'object' && options.container) {
+
+			var container = options.container,
+			    targetContainer = document.getElementById(container);
 
 			if (targetContainer) {
-				var tableProps = {
-					options: options,
-					entity: entity
+
+				var formId = options.formId || 'tui-' + Math.random().toString(36).substr(2),
+				   
+				/*
+     * 初始化搜索栏
+     */
+				initSearchbar = function () {
+					var searchbar = options.searchbar,
+					    searchbarCols = [],
+					    searchbarProps = {
+						// 是否有添加按钮
+						hasAdd: tableProps.entity && tableProps.entity.create ? true : false,
+						roleButtons: tableProps.roleButtons
+					};
+
+					// 初始化筛选工具栏
+					if (searchbar instanceof Array && searchbar.length > 0) {
+
+						for (var i = 0; i < searchbar.length; i++) {
+							if (typeof searchbar[i] === 'object' && searchbar[i].field) {
+								searchbarCols.push({ field: searchbar[i].field, type: searchbar[i].type || 'text' });
+							}
+						}
+
+						searchbarProps.searchbar = searchbar;
+						searchbarProps.searchbarCols = searchbarCols;
+						searchbarProps.formId = formId;
+					} else {
+
+						searchbarProps.searchbar = [];
+					}
+
+					return {
+						searchbarProps: searchbarProps,
+						searchbarCols: searchbarCols
+					};
+				},
+				   
+				/*
+     * 初始化工具栏
+     */
+				initToolbar = function () {
+
+					var toolbar = options.toolbar,
+					    toolbarProps = {
+						roleButtons: tableProps.roleButtons
+					};
+
+					if (toolbar instanceof Array && toolbar.length > 0) {
+
+						toolbarProps.toolbar = toolbar;
+					} else {
+
+						toolbarProps.toolbar = [];
+					}
+
+					return {
+						toolbarProps: toolbarProps
+					};
 				};
 
-				ReactDOM.render(React.createElement(TableComp, tableProps), document.getElementById(options.container));
+				tableProps.searchbar = initSearchbar();
+				tableProps.toolbar = initToolbar();
+				tableProps.options.formId = formId;
+
+				ReactDOM.render(React.createElement(TableComp, tableProps), document.getElementById(container));
 			} else {
-				TUI.danger('目标容器[' + options.container + ']不存在');
-				console.error('目标容器[' + options.container + ']不存在');
+				TUI.danger('目标容器[' + container + ']不存在');
+				console.error('目标容器[' + container + ']不存在');
 			}
 		} else {
 			TUI.danger('TUI Table：请提供一个[container]容器');
@@ -1702,7 +2072,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 				{ id: this.props.id, className: 'modal fade', tabIndex: '-1', role: 'dialog', 'aria-labelledby': this.props.id + 'Label', 'aria-hidden': 'true' },
 				React.createElement(
 					'div',
-					{ className: 'modal-dialog', role: 'document' },
+					{ className: 'modal-dialog ' + this.props.type, role: 'document' },
 					React.createElement(
 						'div',
 						{ className: 'modal-content' },
@@ -1755,11 +2125,36 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		}
 	});
 
+	/**
+  * 模态框
+  * @params
+  * 		id:			模态框ID
+  * 		type:		类型，大（modal-lg）、中、小（modal-sm）
+  * 		title:
+  * 		content:
+  * 		confirm:
+  * 		className:
+  */
 	var Modal = function (modalProps) {
 		var modalDOM = document.getElementById('tui-modal-container');
 
+		if (typeof modalProps.type === 'string') {
+			switch (modalProps.type) {
+				case 'lg':
+					modalProps.type = 'modal-lg';
+					break;
+				case 'sm':
+					modalProps.type = 'modal-sm';
+					break;
+				default:
+					modalProps.type = '';
+					break;
+			}
+		}
+
 		var _modalProps = {
 			id: modalProps.id || 'tui-modal-' + Math.random().toString(36).substr(2),
+			type: modalProps.type || '',
 			title: modalProps.title || '模态框',
 			content: modalProps.content || '',
 			confirm: modalProps.confirm,
@@ -1922,10 +2317,23 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		}
 	};
 
+	// 表格刷新
+	var tableRefresh = function (tableProps) {
+		try {
+			tableProps.options.refresh = true;
+			Table(tableProps);
+		} catch (ex) {
+			TUI.danger('TUI tableRefresh 异常，' + ex);
+			console.error('TUI tableRefresh 异常，' + ex);
+		}
+	};
+
 	// 表格
 	TUI.table = Table;
+	TUI.tableRefresh = tableRefresh;
 	// 模态框
 	TUI.Modal = Modal;
+	TUI.modal = Modal;
 	// 提示信息
 	TUI.Alert = Alert;
 	TUI.success = success;

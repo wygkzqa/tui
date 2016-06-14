@@ -1,0 +1,61 @@
+html {
+	overflow: hidden;
+}
+
+body {
+	font-size: 14px;
+	overflow: hidden;
+	height: 100%;
+	font-family: "Microsoft YaHei",tahoma,arial,'Hiragino Sans GB','\5b8b\4f53',sans-serif;
+}
+
+.navbar {
+	border-radius: 0;
+}
+
+.navbar-fixed-top .container {
+	width: 100%;
+	padding: 0 20px;
+}
+
+.navbar-brand {
+	color: #FFF;
+}
+
+.bg-primary {
+	background: linear-gradient(256deg, #25A696, #2870D0);
+}
+
+.nav-header a {
+	color: #CDE7FA;
+}
+
+.nav-header>li>a:focus,.nav-header>li>a:hover,.nav-header>li>a:active {
+	color: #FFF;
+	text-decoration:none;
+	background-color:inherit;
+}
+
+.nav-header .open>a, .nav-header .open>a:focus, .nav-header .open>a:hover {
+	background-color: inherit;
+}
+
+.navbar-toggle .icon-bar {
+	background-color: #FFF;
+}
+
+.powered-info {
+	color: #FFF;
+	text-align: center;
+    font-weight: normal;
+    position: absolute;
+    bottom: 51px;
+    background: #3B3E40;
+    margin: 0 0 0 22px;
+    padding: 10px 0;
+}
+
+.title {
+	border-left: 6px solid #aa6708;
+    padding-left: 10px;
+}

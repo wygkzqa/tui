@@ -1,5 +1,5 @@
 /**
- * TUI
+ * TUI - 权限验证版
  */
 ;(function(){
 	if (typeof jQuery === 'undefined' || typeof React === 'undefined') {
@@ -7,7 +7,7 @@
 	}
 
 	var TUI = {
-		version: '1.1.9'
+		version: '0.20.2'
 	};
 
 	/**
@@ -106,20 +106,23 @@
 							});
 						}
 					} else {
+						Loading({ className: 'hide' });
 						TUI.danger('保存实体配置有误，使用说明请查看［entity.create和entity.update］');
 					}
 				}
 			} catch(e) {
+				Loading({ className: 'hide' });
 				TUI.danger('保存实体配置有误，' + e);
 				throw new Error('保存实体配置有误，' + e);
 			}
 		},
 		validators: function() {
+			// 实体字段
 			var fields = this.props.entity.fields,
 			// 序列化表单数据
 				dataArr = $('#' + this.props.formId).serializeArray(),
 				data = {},
-				// 不符合条件的个数
+			// 不符合条件的个数
 				inconformityNum = 0;
 
 			// 由于refs无法获得子组件的值，所以使用jquery序列化表单后转换为对象
@@ -131,11 +134,19 @@
 
 			for (var f in fields) {
 				var field = fields[f],
+					// 验证器
 					validators = field.validators,
+					// 元素不是否可用
 					disabled = field.disabled === undefined? false: field.disabled,
+					// 元素只读状态
 					readOnly = field.readOnly === undefined? false: field.readOnly;
 
-				if ((disabled === false || readOnly === false) && typeof validators === 'object') {
+				// 如果元素不可用或只读，直接跳过该元素
+				if (disabled || readOnly) {
+					continue;
+				}
+
+				if (typeof validators === 'object') {
 					var value = data[field.field],
 						notEmpty = validators.notEmpty,
 						remote = validators.remote,
@@ -178,8 +189,6 @@
 								throw new Error('TUI: remote url['+ remote.url +']远程调用异常，' + error + ', ' + obj);
 							}
 						});
-
-						
 					}
 				}
 			}
@@ -196,20 +205,23 @@
 				// 主键
 				key = this.props.entity.key,
 				// 主键值
-				keyValue = '',
+				keyValue = entityData? entityData[key]: '',
 				// 表单提交方式
 				method = '';
 
-			if (typeof entityData === 'object' && entityData[key] !== '') {
-				keyValue = entityData[key];
-				method = this.props.entity.update.method;
-			} else {
-				method = this.props.entity.create.method;
+			if (this.props.entity.update && this.props.entity.create) {
+				if (typeof entityData === 'object' && entityData[key] !== '') {
+					method = this.props.entity.update.method;
+				} else if (this.props.entity.create) {
+					method = this.props.entity.create.method || 'POST';
+				} else {
+					method = 'POST';
+				}
 			}
 
 			return (
 				<form id={this.props.formId} className={className} encType="multipart/form-data" method={method}>
-					<input type="hidden" ref={key} name={key} value={keyValue}/>
+					<input type="hidden" ref={key} name={key} value={keyValue} />
 					<div className="form-group">
 						<a href="javascript:;" className="col-sm-2" onClick={this.props.backList}><i className="fa fa-arrow-left"></i>&nbsp;返回列表</a>
 					</div>
@@ -220,10 +232,11 @@
 								<div key={key} className="form-group">
 									<label className="col-sm-2 control-label">{f.text}</label>
 								    <div className="col-sm-8">
-								    	<EntityField 
+								    	<EntityField
 								    		keyValue={keyValue}
 								    		field={f}
-								    		entityData={entityData} />
+								    		entityData={entityData}
+								    		formId={this.props.formId} />
 								    	<span className="tui-error">{this.state.fields[f.field].message}</span>
 								    </div>
 								</div>
@@ -236,12 +249,14 @@
 						create={this.create}
 						update={this.props.entity.update}
 						entityData={entityData}
-						custom={this.props.entity.custom || []} />
+						custom={this.props.entity.custom || []}
+						roleButtons={this.props.roleButtons} 
+					/>
 				</form>
 			);
 		}
 	});
-	
+
 	/**
 	 * 实体字段
 	 */
@@ -260,20 +275,20 @@
 
 			switch(type) {
 				case 'text':
-					fieldDOM = <EntityText {...fieldProps} />;
+					fieldDOM = <EntityText {...fieldProps} formId={this.props.formId} />;
 					break;
 				case 'select':
 					fieldDOM = <EntitySelect {...fieldProps} />;
-					break;	
+					break;
 				case 'radio':
 					fieldDOM = <EntityRadio {...fieldProps} />;
-					break;	
+					break;
 				case 'textarea':
 					fieldDOM = <EntityTextarea {...fieldProps} />;
-					break;	
+					break;
 				case 'editor':
 					fieldDOM = <EntityEditor {...fieldProps} />;
-					break;	
+					break;
 				default:
 					fieldDOM = <EntityText {...fieldProps} />;
 					break;
@@ -282,7 +297,7 @@
 			return fieldDOM;
 		}
 	});
-	
+
 	/**
 	 * 实体操作
 	 * 添加，修改
@@ -300,11 +315,16 @@
 			var entityData = this.props.entityData,
 				keyValue = this.props.keyValue,
 				update = this.props.update,
-				createOrUpdateDOM = '';
+				createOrUpdateDOM = '',
+				custom = this.props.custom,
+				// 自定义操作
+				customButtons = [],
+				// 按钮权限
+				roleButtons = this.props.roleButtons || {};
 
-			if (keyValue === undefined) {
+			if (roleButtons['create'] && keyValue === undefined) {
 				createOrUpdateDOM = <button type="button" className="ebtn ebtn-success ebtn-rounded tui-mr5" onClick={this.props.create}>添加</button>;
-			} else if (keyValue !== '' && update) {
+			} else if (roleButtons['update'] && keyValue !== '' && update) {
 
 				if (update.condition && typeof update.condition === 'function') {
 					// 如果有condition条件的话，符合条件的才有修改按钮，返回success表示符合
@@ -316,18 +336,21 @@
 				}
 			}
 
+			// 自定义操作按钮
+			for (var i = 0; i < custom.length; i++) {
+				var _custom = custom[i];
+
+				if (roleButtons[_custom.action]) {
+					customButtons.push(<button type="button" className={'tui-mr5 ' + _custom.className} onClick={this.customHandle} data-customid={i}>{roleButtons[_custom.action].name}</button>);
+				}
+			}
+
 			return (
 				<div className="form-group">
 					<div className="col-sm-4 col-sm-offset-2">
 						{createOrUpdateDOM}
 						<button type="button" className="ebtn ebtn-default ebtn-rounded tui-mr5" onClick={this.props.backList}>取消</button>
-						{
-							this.props.custom.map(function(c, key) {
-								return (
-									<button key={key} type="button" className={'tui-mr5 ' + c.className} onClick={this.customHandle} data-customid={key}>{c.text}</button>
-								);
-							}.bind(this))
-						}
+						{customButtons}
 						<button type="reset" style={{'display': 'none'}}>重置</button>
 					</div>
 				</div>
@@ -345,7 +368,7 @@
 			};
 		},
 		shouldComponentUpdate: function(nextProps, nextState) {
-			if (nextProps.keyValue !== this.props.keyValue || 
+			if (nextProps.keyValue !== this.props.keyValue ||
 					this.state.value !== nextState.value) {
 				var value = nextState.value;
 
@@ -361,11 +384,20 @@
 		entityTextChangeHandle: function(e) {
 			this.setState({ value: e.target.value });
 		},
+		dateFocus: function(e) {
+			TUI.datePicker(e, this.props.formId);
+		},
 		render: function() {
 			var field = this.props.field,
 				entityData = this.props.entityData;
 
-			if (this.props.keyValue !== '') {
+			if (this.props.type !== 'file' && this.props.keyValue !== '') {
+				if (this.props.type === 'date') {
+					return (
+						<input type="text" className="form-control" name={field.field} ref={field.field} placeholder={field.placeholder || field.text} value={this.state.value} onFocus={this.dateFocus} onChange={this.entityTextChangeHandle} disabled={field.disabled || false} readOnly={field.readOnly || false} />
+					);
+				}
+
 				return (
 					<input type={this.props.type} className="form-control" name={field.field} ref={field.field} placeholder={field.placeholder || field.text} value={this.state.value} onChange={this.entityTextChangeHandle} disabled={field.disabled || false} readOnly={field.readOnly || false} />
 				);
@@ -413,7 +445,7 @@
 			}
 		},
 		shouldComponentUpdate: function(nextProps, nextState) {
-			if (nextProps.keyValue !== this.props.keyValue || 
+			if (nextProps.keyValue !== this.props.keyValue ||
 					this.state.value !== nextState.value) {
 				var value = nextState.value;
 
@@ -453,7 +485,6 @@
 					</select>
 				);
 			}
-
 		}
 	});
 
@@ -467,7 +498,7 @@
 			};
 		},
 		shouldComponentUpdate: function(nextProps, nextState) {
-			if (nextProps.keyValue !== this.props.keyValue || 
+			if (nextProps.keyValue !== this.props.keyValue ||
 					this.state.value !== nextState.value) {
 				var value = nextState.value;
 
@@ -475,7 +506,7 @@
 					value = nextProps.entityData[nextProps.field.field];
 				}
 
-				this.setState({ value: value });
+				this.setState({ value: value + '' });
 				return true;
 			}
 			return false;
@@ -484,36 +515,31 @@
 			this.setState({ value: e.target.value });
 		},
 		render: function() {
-			var field = this.props.field,
-				value = '';
-
-			if (this.props.keyValue !== '') {
-				value = this.props.entityData[field.field];
-			}
+			var field = this.props.field;
 
 			return (
-				<p className="form-control-static">
-				{
-					field.options.map(function(op, key) {
-						var radioDOM = '';
+				<p>
+					{
+						field.options.map(function(op, key) {
+							var radioDOM = '';
 
-						if (!value) {
-							radioDOM = <input type="radio" ref={field.field} name={field.field} value={op.value} />;
-						} else {
-							radioDOM = <input checked={this.state.value == op.value} type="radio" ref={field.field} name={field.field} value={op.value} onChange={this.entityRadioChangeHandle}/>;
-						}
-						return (
-							<span key={key} style={{'marginRight': '10px'}}>
-								<label className="tui-label">{op.text}</label>&nbsp;{radioDOM}
-							</span>
-						);
-					}.bind(this))
-				}
+							if (this.props.keyValue !== '') {
+								radioDOM = <input checked={this.state.value == op.value} type="radio" ref={field.field} name={field.field} value={op.value} onChange={this.entityRadioChangeHandle}/>;
+							} else {
+								radioDOM = <input type="radio" ref={field.field} name={field.field} value={op.value} />;
+							}
+							return (
+								<label key={key} className="radio-inline">
+									{radioDOM}&nbsp;{op.text}
+								</label>
+							);
+						}.bind(this))
+					}
 				</p>
 			);
 		}
 	});
-	
+
 	/**
 	 * 表单组件之textarea
 	 */
@@ -524,7 +550,7 @@
 			};
 		},
 		shouldComponentUpdate: function(nextProps, nextState) {
-			if (nextProps.keyValue !== this.props.keyValue || 
+			if (nextProps.keyValue !== this.props.keyValue ||
 					this.state.value !== nextState.value) {
 				var value = nextState.value;
 
@@ -554,7 +580,7 @@
 			}
 		}
 	});
-	
+
 	/**
 	 * 表单组件之编辑器
 	 */
@@ -565,7 +591,7 @@
 			}
 		},
 		shouldComponentUpdate: function(nextProps, nextState) {
-			if (nextProps.keyValue !== this.props.keyValue || 
+			if (nextProps.keyValue !== this.props.keyValue ||
 					this.state.value !== nextState.value) {
 				var value = nextState.value;
 
@@ -584,23 +610,27 @@
 		componentDidMount: function() {
 			// 编辑器DOM渲染后开始实例化
 			if (this.isMounted()) {
-				var toolbar = [ 'title', 'bold', 'italic', 'underline', 'strikethrough',  
-            					'color', '|', 'ol', 'ul', 'blockquote', 'code', 'table', '|',  
+				var toolbar = [ 'title', 'bold', 'italic', 'underline', 'strikethrough',
+            					'color', '|', 'ol', 'ul', 'blockquote', 'code', 'table', '|',
             					'link', 'image', 'hr', '|', 'indent', 'outdent' ];
 
-				var editor = new Simditor({
-					textarea: $('#' + this.props.field.field),
-  					toolbar: toolbar,  //工具栏 
-  					upload: {  
-			            url: TUI.config.simditor.url, //文件上传的接口地址  
-			            params: null, //键值对,指定文件上传接口的额外参数,上传的时候随文件一起提交  
-			            fileKey: 'fileDataFileName', //服务器端获取文件数据的参数名  
-			            connectionCount: 3,  
-			            leaveConfirm: '正在上传文件'  
-			        }
-			    });
-
-			    this.setState({ editor: editor });
+            	try {
+            		var editor = new Simditor({
+						textarea: $('#' + this.props.field.field),
+	  					toolbar: toolbar,  //工具栏
+	  					upload: {
+				            url: TUI.config.simditor.url, //文件上传的接口地址
+				            params: null, //键值对,指定文件上传接口的额外参数,上传的时候随文件一起提交
+				            fileKey: 'fileDataFileName', //服务器端获取文件数据的参数名
+				            connectionCount: 3,
+				            leaveConfirm: '正在上传文件'
+				        }
+				    });
+				    this.setState({ editor: editor });
+            	} catch (ex) {
+            		TUI.danger('请引入simdirot相关文件');
+            		console.error('请引入simdirot相关文件');
+            	}
 			}
 		},
 		render: function() {
@@ -625,57 +655,26 @@
 	var TableComp = React.createClass({
 		// 初始化表格
 		getInitialState: function() {
-			var searchbar = this.props.options.searchbar,
-				toolbar = this.props.options.toolbar,
-				searchbarCols = [],
-				searchbarProps= {
-					goCreate: this.goCreate,
-					// 是否有添加按钮
-					hasAdd: this.props.entity && this.props.entity.create? true: false
-				},
-				pagination = this.props.options.pagination,
-				formId = this.props.options.formId || 'tui-' + Math.random().toString(36).substr(2);
 
-			// 初始化筛选工具栏
-			if (searchbar instanceof Array && searchbar.length > 0) {
+		    var searchbarProps = this.props.searchbar.searchbarProps,
+		        pagination = this.props.options.pagination;
 
-				for (var i = 0; i < searchbar.length; i++) {
-					if (typeof searchbar[i] === 'object' && searchbar[i].field) {
-						searchbarCols.push({field: searchbar[i].field, type: searchbar[i].type || 'text'});
-					}
-				}
-
-				searchbarProps.searchbar = searchbar;
-				searchbarProps.searchbarCols = searchbarCols;
-				searchbarProps._pagingClick = this._pagingClick;
-				searchbarProps.formId = formId;				
-				searchbar = <SearchBar {...searchbarProps} />;
-			} else {
-
-				searchbarProps.searchbar = [];
-				searchbar = <SearchBar {...searchbarProps} />;
-			}
-
-			// 初始化功能性工具栏
-			if (toolbar instanceof Array && toolbar.length > 0) {
-				toolbar = <ToolBar toolbar={toolbar} />;
-			} else {
-				toolbar = <ToolBar toolbar={[]} />;
-			}
+		    searchbarProps.goCreate = this.goCreate;
+		    searchbarProps._pagingClick = this._pagingClick;
 
 			return {
-				formId: formId,
+				formId: this.props.options.formId,
 				// 是否显示实体详情
 				isShowEntityDetail: false,
-				searchbar: searchbar,
-				toolbar: toolbar,
-				searchbarCols: searchbarCols,
+				searchbar: <SearchBar {...searchbarProps} />,
+				searchbarCols: this.props.searchbar.searchbarCols,
+				toolbar: <ToolBar {...this.props.toolbar.toolbarProps} />,
 				tableDataProps: {},
 				// 是否显示分页 默认true显示
-				pagination: typeof pagination === 'boolean' && 
-									pagination === true || 
+				pagination: typeof pagination === 'boolean' &&
+									pagination === true ||
 									typeof pagination === 'undefined'? '正在加载分页...': '',
-				// 当前页					
+				// 当前页
 				currentPage: 1,
 				maxSize: typeof this.props.options.maxSize === 'number'? this.props.options.maxSize: 10
 			};
@@ -726,9 +725,9 @@
 				searchbarData = {};
 
 			var ajaxData = this.props.options.data || { random: Math.random() };
-				
+
 			ajaxData.maxSize = maxSize || this.state.maxSize;
-			ajaxData.currentPage = currentPage || 1;	   	
+			ajaxData.currentPage = currentPage || 1;
 
 			// 筛选条件
 			for (var i = 0; i < searchbarCols.length; i++) {
@@ -742,26 +741,33 @@
 						break;
 					case 'radio':
 						value = $('#' + this.state.formId).find('input[name='+ searchcol +']:checked').val();
-						break;	
+						break;
 					default:
 						value = $('#' + this.state.formId).find('[name='+ searchcol +']').val();
-						break;	
+						break;
 				}
 
 				if (value) {
 					ajaxData[searchcol] = value;
 				}
-			}		
+			}
+
+			if (typeof this.props.options.submitBefore === 'function') {
+				this.props.options.submitBefore({
+					data: ajaxData
+				});
+			}
 
 			$.ajax({
 				method: this.props.options.method? this.props.options.method: 'GET',
 				url: url,
+				contentType: this.props.options.contentType || 'application/x-www-form-urlencoded',
 				data: ajaxData,
 				dataType: 'JSON',
 				success: function(result) {
 					Loading({ className: 'hide' });
-					if (typeof result === 'object' 
-							&& result.rows !== undefined 
+					if (typeof result === 'object'
+							&& result.rows !== undefined
 							&& result.rowCount !==undefined) {
 
 						if (this.isMounted()) {
@@ -770,7 +776,7 @@
 
 							var tableDataProps = { options: this.props.options, isCheckAll: false },
 								paginationProps = {
-													rowCount: result.rowCount, 
+													rowCount: result.rowCount,
 													currentPage: ajaxData.currentPage,
 													maxSize: ajaxData.maxSize,
 													_pagingClick: this._pagingClick,
@@ -782,7 +788,7 @@
 								tableDataProps: tableDataProps,
 								pagination: typeof pagination === 'boolean' &&
 												pagination === true ||
-												typeof pagination === 'undefined'? 
+												typeof pagination === 'undefined'?
 												<Pagination {...paginationProps} />: '',
 								currentPage: ajaxData.currentPage
 							});
@@ -847,7 +853,7 @@
 					if (typeof retFind.callback === 'function') {
 						result = retFind.callback(result);
 					}
-					
+
 					this.goCreate(result);
 				}.bind(this),
 				error: function(xhr, error, obj) {
@@ -859,10 +865,16 @@
 		},
 		// 显示添加或编辑页面
 		goCreate: function(entityData) {
-			if (typeof this.props.entity === 'object' && this.props.entity.fields instanceof Array) {
-				this.setState({ isShowEntityDetail: true, entityData: entityData });
+			// 是否自定义创建按钮事件，handle方法表示自定义事件
+			// 没有handle便走默认
+			if (!this.props.entity.create || !this.props.entity.create.handle) {
+				if (typeof this.props.entity === 'object' && this.props.entity.fields instanceof Array) {
+					this.setState({ isShowEntityDetail: true, entityData: entityData });
+				} else {
+					TUI.danger('请先添加实体属性，使用说明请看［entity.fields］');
+				}
 			} else {
-				TUI.danger('请先添加实体属性，使用说明请看［entity.fields］');
+				this.props.entity.create.handle();
 			}
 		},
 		// checkbox处理事件
@@ -884,16 +896,19 @@
 		},
 		// 渲染表格和分页
 		render: function() {
-			var entityDetail = '';
+			var entityDetail = '',
+			    type = this.props.options.type? this.props.options.type: 'table';
 
 			if (this.props.entity) {
 				entityDetail = <EntityDetail
 									className={this.state.isShowEntityDetail? 'show': 'hide'}
 									formId={'find-' + this.state.formId}
-									backList={this.backList} 
+									backList={this.backList}
 									entity={this.props.entity}
 									entityData={this.state.entityData}
-									currentPage={this.state.currentPage} />
+									currentPage={this.state.currentPage}
+									roleButtons={this.props.roleButtons} 
+								/>
 			}
 
 			return (
@@ -901,23 +916,34 @@
 					<form id={this.state.formId} className={this.state.isShowEntityDetail? 'hide': 'show'}>
 						{this.state.searchbar}
 						{this.state.toolbar}
-						<TableData
-							rows={this.state.rows} 
-							{...this.state.tableDataProps} 
-							handlerCheckForParent={this.handlerCheckForParent} 
-							checkAll={this.checkAll}
-							deleteHandle={this.deleteHandle} 
-							findHandle={this.findHandle}
-							refresh={this.refresh} />
-						{this.state.pagination}
+						<div className="tui-table-div">
+                            <table className="tui-table tui-table-hover">
+                                <TableColsComp
+                                    columns={this.props.options.columns}
+                                    checkAll={this.checkAll}
+                                    isCheckAll={this.state.tableDataProps.isCheckAll}
+                                />
+                                <TableData
+                                    rows={this.state.rows}
+                                    {...this.state.tableDataProps}
+                                    handlerCheckForParent={this.handlerCheckForParent}
+                                    deleteHandle={this.deleteHandle}
+                                    findHandle={this.findHandle}
+                                    refresh={this.refresh}
+                                    roleButtons={this.props.roleButtons}
+                                    type={type}
+                                />
+                            </table>
+                        </div>
+                        {this.state.pagination}
 					</form>
 
 					{entityDetail}
-				</div>	
+				</div>
 			);
 		}
 	});
-	
+
 	/**
 	 * TUI Table 表格组件-筛选条件工具栏
 	 * Children
@@ -928,10 +954,11 @@
 		},
 		render: function() {
 			// 添加按钮
-			var addBtn = <button type="button" className="ebtn ebtn-success ebtn-rounded" onClick={this.props.goCreate}><span className="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;添加</button>;
-
-			if (!this.props.hasAdd) {
+			var roleButtons = this.props.roleButtons || {},
 				addBtn = '';
+
+			if (roleButtons['create'] && this.props.hasAdd) {
+				addBtn = <button type="button" className="ebtn ebtn-success ebtn-rounded" onClick={this.props.goCreate}><i className="fa fa-plus"></i>&nbsp;添加</button>;
 			}
 
 			if (this.props.searchbar.length === 0 && this.props.hasAdd) {
@@ -986,17 +1013,17 @@
 														}
 
 														searchbarDOM = (
-															<div className="form-group">
+															<div className="form-group" key={key}>
 																<label htmlFor={obj.field}>{obj.text}</label>
-																<select id={obj.field} name={obj.field} className="form-control" key={key}>{optionsArr}</select>&nbsp;
+																<select id={obj.field} name={obj.field} className="form-control">{optionsArr}</select>&nbsp;
 															</div>
-														);		
+														);
 													},
 													error: function(xhr, error, obj) {
 														TUI.danger(url + '远程调用异常［' + error + ', ' + obj + '］');
 													}
 												});
-												break;											
+												break;
 											} else {
 
 												optionsArr.push(<option value="">不限</option>);
@@ -1006,9 +1033,9 @@
 												}
 
 												searchbarDOM = (
-													<div className="form-group">
+													<div className="form-group" key={key}>
 														<label htmlFor={obj.field}>{obj.text}</label>
-														<select id={obj.field} name={obj.field} className="form-control" key={key}>{optionsArr}</select>&nbsp;
+														<select id={obj.field} name={obj.field} className="form-control">{optionsArr}</select>&nbsp;
 													</div>
 												);
 
@@ -1048,12 +1075,12 @@
 							}.bind(this))
 						}
 						<div className="form-group">
-							&nbsp;<button type="button" className="ebtn ebtn-primary ebtn-rounded" onClick={this.props._pagingClick} data-page="1">查询</button>
+						&nbsp;<button type="button" className="ebtn ebtn-primary ebtn-rounded" onClick={this.props._pagingClick} data-page="1"><i className="fa fa-search"></i>&nbsp;查询</button>
 							&nbsp;<button type="reset" className="ebtn ebtn-default ebtn-rounded">重置</button>
 							&nbsp;{addBtn}
 						</div>
 					</div>
-				);			
+				);
 			} else {
 				return (
 					<div className="tui-searchbar"></div>
@@ -1068,6 +1095,8 @@
 	 */
 	var ToolBar = React.createClass({
 		render: function() {
+			var roleButtons = this.props.roleButtons || {};
+
 			return (
 				<div className="tui-toolbar">
 					{
@@ -1077,7 +1106,9 @@
 
 							switch(type) {
 								case 'button':
-									tbDOM = <button className={(tb.className? tb.className: 'btn btn-primary') + ' tui-mr5'} type="button" onClick={tb.handle}>{tb.text}</button>;
+									if (roleButtons[tb.action]) {
+										tbDOM = <button className={(tb.className? tb.className: 'btn btn-primary') + ' tui-mr5'} type="button" onClick={tb.handle}>{roleButtons[tb.action].name}</button>;
+									}
 									break;
 								case 'checkbox':
 									var id = tb.id || '',
@@ -1085,10 +1116,12 @@
 										checked = tb.checked || false;
 
 									tbDOM = <div><label htmlFor={id} className="tui-mr5">{tb.text}</label><input type="checkbox" id={id} name={name} style={{'width': '15', 'height': '15'}} defaultChecked={tb.checked} /></div>;
-									break;	
+									break;
 								default:
-									tbDOM = <button className={(tb.className? tb.className: 'btn btn-primary') + ' tui-mr5'} type="button" onClick={tb.handle}>{tb.text}</button>;
-									break;	
+									if (roleButtons[tb.action]) {
+										tbDOM = <button className={(tb.className? tb.className: 'btn btn-primary') + ' tui-mr5'} type="button" onClick={tb.handle}>{roleButtons[tb.action].name}</button>;
+									}
+									break;
 							};
 							return (
 								<div className="form-group">{tbDOM}</div>
@@ -1101,68 +1134,252 @@
 	});
 
 	/**
+     * 表格列组件
+     */
+    var TableColsComp = React.createClass({
+        render: function() {
+            return (
+                <thead className="tui-thead-default">
+                    <tr>
+                        {
+                            this.props.columns.map(function(col, key) {
+                                var colContent = col.text;
+
+                                if (col.checkbox) {
+                                    colContent = <input type="checkbox" checked={this.props.isCheckAll} onChange={this.props._checkAll}/>
+                                }
+                                return (<th key={key} style={{'width': col.width? col.width: 'auto'}}>{colContent}</th>);
+                            }.bind(this))
+                        }
+                        <td></td>
+                    </tr>
+                </thead>
+            );
+        }
+    });
+
+	/**
 	 * TUI Table 表格组件-表格数据渲染
 	 * Children
 	 */
 	var TableData = React.createClass({
+	    componentWillReceiveProps: function(nextProps) {
+	        if (nextProps.rows) {
+	            this.setState({ tableTree: nextProps.rows });
+	        }
+	    },
 		_checkAll: function(e) {
 			this.props.checkAll(e.target.checked);
 		},
+		/*
+		 * 父级点击
+		 */
+		parentClick: function(e) {
+		    e.preventDefault();
+
+		    var dataset = e.currentTarget.dataset,
+		    	index = dataset.index.indexOf('-') === -1? dataset.index: dataset.index.split('-'),
+		    	hierarchy = dataset.hierarchy,
+		        tableTree = this.state.tableTree,
+		        // 父级状态默认收起
+		        status = '';
+
+		    // 最顶级展开
+            if (typeof index === 'string') {
+            	
+		        status = tableTree[index].tableTreeStatus || 'hide';
+
+            	if (status === 'hide') {
+	                tableTree[index].tableTreeStatus = 'tui-show';
+	            } else {
+	            	var children = tableTree[index].children;
+	                tableTree[index].tableTreeStatus = 'hide';
+
+	                // 隐藏二级
+	                if (children instanceof Array) {
+	                	for (var i = 0; i < children.length; i++) {
+	                		if (children[i]) {
+	                			children[i].tableTreeChildStatus = 'hide';
+	                		}
+	                	}
+	                }
+	            }
+            } else {
+            	// 二级的情况下，修改tableTreeChildStatus字段来控制三级的显示
+            	if (hierarchy == '2') {
+            		status = tableTree[index[0]].children[index[1]].tableTreeChildStatus || 'hide';
+
+	            	if (status === 'hide') {
+		                tableTree[index[0]].children[index[1]].tableTreeChildStatus = 'tui-show';
+		            } else {
+		                tableTree[index[0]].children[index[1]].tableTreeChildStatus = 'hide';
+		            }
+            	} else {
+            		status = tableTree[index[0]].children[index[1]].tableTreeStatus || 'hide';
+
+	            	if (status === 'hide') {
+		                tableTree[index[0]].children[index[1]].tableTreeStatus = 'tui-show';
+		            } else {
+		                tableTree[index[0]].children[index[1]].tableTreeStatus = 'hide';
+		            }
+            	}
+		        
+            }
+            
+            this.setState({ tableTree: tableTree });
+		},
 		render: function() {
 			if (!this.props.rows || !this.props.options) {
-				return (<p>正在加载数据...</p>);
+				return (<tbody><tr><td>正在加载数据...</td></tr></tbody>);
 			}
 
+            var type = this.props.type;
+
 			return (
-				<div className="tui-table-div">
-					<table className="tui-table table-striped">
-						<thead className="tui-thead-default">
-						    <tr>
-						    	{
-						    		this.props.options.columns.map(function(col, key) {
-						    			var colContent = col.text;
+                <tbody className="tui-tbody-default">
+                    {
+                        this.props.rows.map(function(row, key) {
+                            row.isCheck = row.isCheck || false;
 
-						    			if (col.checkbox) {
-						    				colContent = <input type="checkbox" checked={this.props.isCheckAll} onChange={this._checkAll}/>
-						    			}
-						    			return (<th key={key} style={{'width': col.width? col.width: 'auto'}}>{colContent}</th>);
-						    		}.bind(this))
-						    	}
-						    	<td></td>
-						    </tr>
-					  	</thead>
-					  	<tbody className="tui-tbody-default">
-					  		{
-								this.props.rows.map(function(row, key) {
-									row.isCheck = row.isCheck || false;
+                            var tableRowProps = {
+                                type: type,
+                                row: row,
+                                rowHandles: this.props.options.rowHandles,
+                                columns: this.props.options.columns,
+                                index: key,
+                                handlerCheckForParent: this.props.handlerCheckForParent,
+                                deleteHandle: this.props.deleteHandle,
+                                findHandle: this.props.findHandle,
+                                refresh: this.props.refresh,
+                                roleButtons: this.props.roleButtons
+                            };
 
-									var tableRowProps = {
-										row: row,
-										rowHandles: this.props.options.rowHandles,
-										columns: this.props.options.columns,
-										index: key,
-										handlerCheckForParent: this.props.handlerCheckForParent,
-										deleteHandle: this.props.deleteHandle,
-										findHandle: this.props.findHandle,
-										refresh: this.props.refresh
-									};
+                            // 标准表格
+                            if (type === 'table') {
+                                return (<TableRow key={key} {...tableRowProps}/>);
+                            }
+                            // 树形表格
+                            else if (type === 'tableTree') {
 
-									return (<TableRow key={key} {...tableRowProps}/>);
-								}.bind(this))
-							}
+                                var tableTreeProps = {
+                                    parentClick: this.parentClick
+                                };
 
-					  	</tbody>
-					</table>
-				</div>
+                                tableRowProps.tableTreeProps = tableTreeProps;
+
+                                var childsArr = [<TableRow
+                                					// 一级状态 控制二级
+                                					tableTreeStatus={this.state.tableTree[key].tableTreeStatus || 'hide'}
+                                					hierarchy={1}
+                                					isHighest={true} 
+                                					isParent={true} 
+                                					key={key} 
+                                					{...tableRowProps}
+                                				/>],
+                                    children = row.children;
+
+                                // 确保子级为数组
+                                if (children && children instanceof Array) {
+                                	// 二级
+                                    for (var i = 0; i < children.length; i++) {
+                                    	if (children[i]) {
+                                    		var _children = children[i].children;
+
+	                                        tableRowProps.row = children[i];
+	                                        tableRowProps.index = i;
+	                                        tableRowProps.parentIndex = key;
+
+	                                        if (_children && _children instanceof Array) {
+	                                        	childsArr.push(<TableRow 
+	                                        						// 二级状态
+	                                        						tableTreeStatus={this.state.tableTree[key].tableTreeStatus || 'hide'}
+	                                        						// 控制三级的状态
+	                                        						tableTreeChildStatus={this.state.tableTree[key].children[i].tableTreeChildStatus || 'hide'}
+	                                        						hierarchy={2}
+	                                        						isParent={true} 
+	                                        						key={key + '-' + i} 
+	                                        						{...tableRowProps} 
+	                                        					/>);
+
+	                                        	// 三级
+	                                        	for (var j = 0; j < _children.length; j++) {
+	                                        		if (_children[j]) {
+	                                        			tableRowProps.row = _children[j];
+				                                        tableRowProps.index = j;
+				                                        tableRowProps.parentIndex = i;
+				                                        
+				                                        childsArr.push(<TableRow 
+				                                        					// 三级状态
+				                                        					tableTreeStatus={this.state.tableTree[key].children[i].tableTreeChildStatus || 'hide'}
+				                                        					hierarchy={3}
+				                                        					key={key + '-' + i + '-' + j} 
+				                                        					{...tableRowProps} />);
+	                                        		}
+	                                        	}
+	                                        } else {
+	                                        	childsArr.push(<TableRow
+	                                        						tableTreeStatus={this.state.tableTree[key].tableTreeStatus || 'hide'}
+	                                        						key={key + '-' + i} 
+	                                        						{...tableRowProps} 
+	                                        					/>);
+	                                        }
+                                    	}
+                                    }
+                                }
+
+                                return childsArr;
+                            }
+                        }.bind(this))
+                    }
+                </tbody>
 			);
 		}
 	});
-	
+
 	/**
 	 * TUI TableRow 表格组件－行
 	 * @type {[type]}
 	 */
 	var TableRow = React.createClass({
+	    getInitialState: function(){
+	        var status = this.props.tableTreeStatus;
+
+	        return {
+	            tableTreeProps: {
+	                status: status,
+	                parentStatusDOM: this.getParentStatusDOM(status)
+	            }
+	        };
+	    },
+	    componentWillReceiveProps: function(nextProps) {
+	        if (this.props.type === 'tableTree') {
+
+	        	if (nextProps.tableTreeStatus !== this.props.tableTreeStatus ||
+	        			nextProps.tableTreeChildStatus !== this.props.tableTreeChildStatus) {
+
+        			// 控制显示子级的状态
+        			var status = nextProps.tableTreeStatus,
+        				// 控制图标的状态
+        				showHideStatus = this.props.hierarchy === 2? nextProps.tableTreeChildStatus: status;
+
+		        	var tableTreeProps = {
+		        		status: status,
+		        		parentStatusDOM: this.getParentStatusDOM(showHideStatus)
+		        	};
+
+                    this.setState({ tableTreeProps: tableTreeProps });
+        		}
+	        }
+	    },
+	    /**
+	     * 获取父级的状态DOM
+	     */
+	    getParentStatusDOM: function(status) {
+	    	return status === 'hide'? (<span><i className="fa fa-angle-right tui-mr5"></i><i className="fa fa-folder-open-o tui-mr5"></i></span>): (<span><i className="fa fa-angle-down tui-mr5"></i><i className="fa fa-folder-open tui-mr5"></i></span>);
+	    },
+	    /**
+	     * 删除事件
+	     */
 		deleteHandle: function(e) {
 			e.preventDefault();
 
@@ -1180,6 +1397,9 @@
 				TUI.danger('请配置删除事件，参考属性［rowHandles.delete］');
 			}
 		},
+		/**
+		 * 查看事件
+		 */
 		findHandle: function(e) {
 			e.preventDefault();
 
@@ -1205,20 +1425,33 @@
 		customHandles: function(e) {
 			e.preventDefault();
 			this.props.rowHandles.custom[e.currentTarget.dataset.customid].handle(this.props.row);
-			// if (handleRet && handleRet === 'success') {
-			// 	this.props.refresh();
-			// }
 		},
 		render: function() {
 			var rowHandles = this.props.rowHandles,
 				rowHandlesDOM = [],
 				// 自定义操作DOM
-				customHandles = rowHandles.custom,
-				customHandlesDOM = [];
+				customHandles = rowHandles? rowHandles.custom: [],
+				customHandlesDOM = [],
+				// 按钮权限
+				roleButtons = this.props.roleButtons || {},
+				// 是否父级
+				isParent = this.props.isParent,
+				isHighest = this.props.isHighest,
+				parentDOM = this.props.type === 'tableTree'? <td></td>: undefined;
+
+			if (isParent) {
+			    parentDOM = <a href="javascript:;"
+			    				onClick={this.props.tableTreeProps.parentClick} 
+			    				data-index={typeof this.props.parentIndex === 'number'? this.props.parentIndex + '-' + this.props.index: this.props.index}
+			    				data-hierarchy={this.props.hierarchy}
+			    			>
+			    				{this.state.tableTreeProps.parentStatusDOM}
+			    			</a>;
+			}
 
 			if (rowHandles) {
 				// 查看
-				if (typeof rowHandles.find === 'function') {
+				if (roleButtons['find'] && typeof rowHandles.find === 'function') {
 					rowHandlesDOM.push(<a href="javascript:;" className="tui-mr5" title="详情" onClick={this.findHandle}><i className="fa fa-edit fa-lg"></i></a>);
 				}
 
@@ -1227,15 +1460,17 @@
 					for (var i = 0; i < customHandles.length; i++) {
 						var custom = customHandles[i];
 
-						customHandlesDOM.push(<li><a href="javascript:;" onClick={this.customHandles} data-customid={i}><i className={custom.iconClass? custom.iconClass: ''}></i>&nbsp;{custom.text}</a></li>);
+						if (roleButtons[custom.action]) {
+							customHandlesDOM.push(<li><a href="javascript:;" onClick={this.customHandles} data-customid={i}><i className={custom.iconClass? custom.iconClass: ''}></i>&nbsp;{custom.text}</a></li>);
+						}
 					}
 				}
 
 				// 删除
-				if (typeof rowHandles.delete === 'function') {
-					customHandlesDOM.push(<li><a href="javascript:;" className="tui-mr5" title="删除" onClick={this.deleteHandle} style={{'marginRight': '5px'}}><i className="fa fa-trash-o fa-fw"></i>&nbsp;删除</a></li>);
+				if (roleButtons['delete'] && typeof rowHandles.delete === 'function') {
+					customHandlesDOM.push(<li><a href="javascript:;" className="tui-mr5" title={roleButtons['delete'].name} onClick={this.deleteHandle} style={{'marginRight': '5px'}}><i className="fa fa-trash-o fa-fw"></i>&nbsp;{roleButtons['delete'].name}</a></li>);
 				}
-				
+
 				if (customHandlesDOM.length > 0) {
 					rowHandlesDOM.push(<div className="btn-group">
 										  <a href="javascript:;" className="dropdown-toggle tui-dropdown-menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -1247,53 +1482,59 @@
 			}
 
 			return (
-				<tr>
+				<tr key={this.props.index} 
+					data-parent={this.props.hierarchy === 3? ('child_' + this.props.parentIndex): typeof this.props.parentIndex === 'number'? 'parent_' + this.props.parentIndex: ''}
+				    className={(this.props.type === 'table' || isHighest)? '': (this.state.tableTreeProps? this.state.tableTreeProps.status: '')}
+				>
 					{
 						this.props.columns.map(function(col, key) {
-							var row = this.props.row;
+							var row = this.props.row,
+								// 列值
+								// 如果是树形菜单并且是父级并且为第1列的话，把展开按钮加上
+								colVal = (key === 0 && isParent)? parentDOM: '';
 
-							// 是否有处理方法
-							if (typeof col.handle === 'function') {
-								var handleVal = col.handle(row);
-								
-								if (handleVal === undefined) {
-									console.error('TUI Table column["'+ col.field +'"] is no return value.');
-								}
+							if (!col.handle && col.field.indexOf('.') === -1 && !col.checkbox) {
+								return (<td key={key}>{colVal}{row[col.field]}</td>);
+							} else {
+								// 是否有处理方法
+								if (typeof col.handle === 'function') {
+									colVal = col.handle(row);
 
-								if (!col.field) {
-									var _html = {__html: handleVal};
-
-									return (<td key={key} dangerouslySetInnerHTML={_html}></td>);
-								}
-
-								return (<td key={key}>{handleVal}</td>);
-							} 
-							// 是否多级属性
-							else if (col.field.indexOf('.') > 0) {
-								var _colArr = col.field.split('.'),
-									_colVal = '';
-
-								try {
-									for (var i = 0; i < _colArr.length; i++) {
-										if (i === 0) {
-											_colVal = row[_colArr[i]];
-										} else {
-											_colVal = _colVal[_colArr[i]];
-										}
+									if (colVal === undefined) {
+										console.error('TUI Table column["'+ col.field +'"] is no return value.');
 									}
 
-									return (<td key={key}>{_colVal}</td>);
-								} catch (e) {
-									return (<td key={key}></td>);
+									if (!col.field) {
+										var _html = {__html: colVal};
+
+										return (<td key={key} dangerouslySetInnerHTML={_html}></td>);
+									}
+
+									return (<td key={key}>{colVal}</td>);
 								}
-							}
-							// 是否有chexkbox
-							else if (col.checkbox) {
-								return (<td key={key}><input type="checkbox" name={col.field} value={row[col.field]} checked={row.isCheck} onChange={this.handlerCheck}/></td>);
-							} 
-							// 默认
-							else {
-								return (<td key={key}>{row[col.field]}</td>);
+								// 是否多级属性
+								else if (col.field.indexOf('.') > 0) {
+									var _colArr = col.field.split('.'),
+										_colVal = '';
+
+									try {
+										for (var i = 0; i < _colArr.length; i++) {
+											if (i === 0) {
+												_colVal = row[_colArr[i]];
+											} else {
+												_colVal = _colVal[_colArr[i]];
+											}
+										}
+
+										return (<td key={key}>{colVal}{_colVal}</td>);
+									} catch (e) {
+										return (<td key={key}></td>);
+									}
+								}
+								// 是否有chexkbox
+								else if (col.checkbox) {
+									return (<td key={key}><input type="checkbox" name={col.field} value={row[col.field]} checked={row.isCheck} onChange={this.handlerCheck}/></td>);
+								}
 							}
 						}.bind(this))
 					}
@@ -1302,9 +1543,9 @@
 			);
 		}
 	});
-	
+
 	/**
-	 * TUI Pagination 表格组件-分页组件 
+	 * TUI Pagination 表格组件-分页组件
 	 * Children
 	 */
 	var Pagination = React.createClass({
@@ -1323,7 +1564,7 @@
 				maxPageCount = 5,
 			// 总页数
 				pageCount = rowCount % maxSize === 0? rowCount / maxSize: parseInt( rowCount / maxSize ) + 1;
-			
+
 			// 分页数DOM
 			var pagesDOM = [],
 				begin = 1,
@@ -1345,11 +1586,11 @@
 					pagesDOM.push(<li key={1}><a href="javascript:;" onClick={this.props._pagingClick} data-page={1}>{1}...</a></li>);
 					end++;
 				} else {
-					
+
 					end = maxPageCount + 1;
 				}
 			}
-			
+
 			for (var i = begin; i < end; i++) {
 				var _page = <li key={i}><a href="javascript:;" onClick={this.props._pagingClick} data-page={i}>{i}</a></li>;
 
@@ -1357,7 +1598,7 @@
 					_page = <li key={i} className="active"><a href="javascript:;">{i}</a></li>;
 				}
 
-				pagesDOM.push(_page);		
+				pagesDOM.push(_page);
 			}
 
 			if (pageCount - currentPage > 3) {
@@ -1401,26 +1642,86 @@
 
 	/**
 	 * 封装表格
+	 * @param tableProps: { options: [表格操作参数], entity: [实体操作参数], roleButtons: [权限按钮] }
 	 */
-	var Table = function(options, entity) {
-		if (typeof options === 'object' && 
-				options.container && 
-				options.container.length > 0) {
+	var Table = function(tableProps) {
+		var options = tableProps.options;
 
-			var targetContainer = document.getElementById(options.container);
+		if (typeof options === 'object' && options.container) {
+
+			var container = options.container,
+				targetContainer = document.getElementById(container);
 
 			if (targetContainer) {
-				var tableProps = {
-					options: options,
-					entity: entity
-				};
 
-				ReactDOM.render(<TableComp {...tableProps} />,
-					document.getElementById(options.container)
-				);
+                var formId = options.formId || 'tui-' + Math.random().toString(36).substr(2),
+				/*
+				 * 初始化搜索栏
+				 */
+				    initSearchbar = function() {
+						var	searchbar = options.searchbar,
+							searchbarCols = [],
+							searchbarProps= {
+								// 是否有添加按钮
+								hasAdd: tableProps.entity && tableProps.entity.create? true: false,
+								roleButtons: tableProps.roleButtons
+							}
+
+						// 初始化筛选工具栏
+						if (searchbar instanceof Array && searchbar.length > 0) {
+
+							for (var i = 0; i < searchbar.length; i++) {
+								if (typeof searchbar[i] === 'object' && searchbar[i].field) {
+									searchbarCols.push({field: searchbar[i].field, type: searchbar[i].type || 'text'});
+								}
+							}
+
+							searchbarProps.searchbar = searchbar;
+							searchbarProps.searchbarCols = searchbarCols;
+							searchbarProps.formId = formId;
+						} else {
+
+							searchbarProps.searchbar = [];
+						}
+
+						return {
+                            searchbarProps: searchbarProps,
+                            searchbarCols: searchbarCols
+						};
+					},
+					/*
+					 * 初始化工具栏
+					 */
+					initToolbar = function() {
+
+						var toolbar = options.toolbar,
+							toolbarProps = {
+								roleButtons: tableProps.roleButtons
+							};
+
+						if (toolbar instanceof Array && toolbar.length > 0) {
+
+							toolbarProps.toolbar = toolbar;
+						} else {
+
+							toolbarProps.toolbar = [];
+						}
+
+						return {
+                            toolbarProps: toolbarProps
+						};
+					};
+
+                tableProps.searchbar = initSearchbar();
+                tableProps.toolbar = initToolbar();
+                tableProps.options.formId = formId;
+
+                ReactDOM.render(<TableComp {...tableProps} />,
+                    document.getElementById(container)
+                );
 			} else {
-				TUI.danger('目标容器['+ options.container +']不存在');
-				console.error('目标容器['+ options.container +']不存在');
+				TUI.danger('目标容器['+ container +']不存在');
+				console.error('目标容器['+ container +']不存在');
 			}
 		} else {
 			TUI.danger('TUI Table：请提供一个[container]容器');
@@ -1443,11 +1744,11 @@
 
 			if (typeof this.props.confirm === 'function') {
 				confirmBtn = <button type="button" className="ebtn ebtn-success ebtn-rounded" onClick={this.confirm}>确定</button>;
-			}	
+			}
 
 			return (
 				<div id={this.props.id} className="modal fade" tabIndex="-1" role="dialog" aria-labelledby={this.props.id + 'Label'} aria-hidden="true">
-				  <div className="modal-dialog" role="document">
+				  <div className={'modal-dialog ' + this.props.type} role="document">
 				    <div className="modal-content">
 				      <div className="modal-header">
 				        <button type="button" className="close" data-dismiss="modal" aria-label="Close">
@@ -1471,11 +1772,36 @@
 		}
 	});
 
+	/**
+	 * 模态框
+	 * @params
+	 * 		id:			模态框ID
+	 * 		type:		类型，大（modal-lg）、中、小（modal-sm）
+	 * 		title:
+	 * 		content:
+	 * 		confirm:
+	 * 		className:
+	 */
 	var Modal = function(modalProps) {
 		var modalDOM = document.getElementById('tui-modal-container');
 
+		if (typeof modalProps.type === 'string') {
+			switch (modalProps.type) {
+				case 'lg':
+					modalProps.type = 'modal-lg';
+					break;
+				case 'sm':
+					modalProps.type = 'modal-sm';
+					break;	
+				default:
+					modalProps.type = '';
+					break;
+			}
+		}
+
 		var _modalProps = {
 			id: modalProps.id || 'tui-modal-' + Math.random().toString(36).substr(2),
+			type: modalProps.type || '',
 			title: modalProps.title || '模态框',
 			content: modalProps.content || '',
 			confirm: modalProps.confirm,
@@ -1559,7 +1885,7 @@
 		} else {
 			dom = loadingDOM[0];
 		}
-		
+
 		ReactDOM.render(React.createElement(LoadingModal, { className: obj && obj.className? obj.className: 'show', text: obj && obj.text? obj.text: '正在加载' }), dom);
 	}
 
@@ -1567,7 +1893,7 @@
 	var Utils = {
 		// 日期转换 毫秒转
 		dateFormat: function(value, style) {
-			if (value) {		
+			if (value) {
 				var dateFormat = new Date(value),
 					style = style || '',
 					year = dateFormat.getYear() + 1900,
@@ -1588,7 +1914,7 @@
 						break;
 					default:
 						rt = year + '-' + month + '-' + date + '   ' + hour + ':' + minute + ':' + second;
-						break;	
+						break;
 				}
 
 				return rt;
@@ -1601,7 +1927,7 @@
 
 			var actualLeft = e.offsetLeft;
 		　　 var current = e.offsetParent;
-		　　 
+		　　
 			while (current !== null){
 		　　 	actualLeft += current.offsetLeft;
 		　　　　　current = current.offsetParent;
@@ -1614,7 +1940,7 @@
 
 			var actualTop = e.offsetTop;
 		　　 var current = e.offsetParent;
-		　　 
+		　　
 			while (current !== null){
 		　　 	actualTop += current.offsetTop;
 		　　　　　current = current.offsetParent;
@@ -1624,10 +1950,23 @@
 		}
 	};
 
+	// 表格刷新
+	var tableRefresh = function(tableProps) {
+		try {
+			tableProps.options.refresh = true;
+			Table(tableProps);
+		} catch (ex) {
+			TUI.danger('TUI tableRefresh 异常，' + ex);
+			console.error('TUI tableRefresh 异常，' + ex);
+		}
+	};
+
 	// 表格
 	TUI.table = Table;
+	TUI.tableRefresh = tableRefresh;
 	// 模态框
 	TUI.Modal = Modal;
+	TUI.modal = Modal;
 	// 提示信息
 	TUI.Alert = Alert;
 	TUI.success = success;
