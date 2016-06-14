@@ -1,14 +1,15 @@
 # TUI
 基于React的后台快速开发框架
-# 使用
+# 查看Demo
 ```
 git clone https://github.com/wygkzqa/tui.git
-cd tui
+cd tui/example
 npm install
-gulp start
+node app.js
+open localhost:3003/backend
 ```
 # 说明
-simditor文件夹为TUI依赖的编辑器插件，如果用到编辑器，页面引入simditor.all.min.js即可。
+simditor文件夹为TUI依赖的编辑器插件，如果用到编辑器，页面引入simditor.all.min.js和simditor.css即可。
 
 
 # 交流学习
