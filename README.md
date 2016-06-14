@@ -6,7 +6,7 @@ git clone https://github.com/wygkzqa/tui.git
 cd tui/example
 npm install
 node app.js
-open localhost:3003/backend
+open localhost:3003/be
 ```
 # 说明
 simditor文件夹为TUI依赖的编辑器插件，如果用到编辑器，页面引入simditor.all.min.js和simditor.css即可。
