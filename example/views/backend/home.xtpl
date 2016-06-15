@@ -54,20 +54,12 @@
                         <i class="fa fa-align-justify fa-lg"></i>
                     </a>
                 </li>
-                {{#each (results)}}
                 <li>
-                    <a href="javascript:;" class="tui-sidebar-a"
-                       {{#if (this.link)}}
-                       data-tabs="id:'{{this.id}}',url:'{{this.link}}',title:'{{this.name}}'"
-                       {{/if}}
-                    ><i class="{{this.iconClass}} fa-fw"></i>&nbsp;{{this.name}}</a>
+                    <a href="javascript:;" class="tui-sidebar-a"><i class="fa fa-cog fa-fw"></i>&nbsp;Demo</a>
                     <ul class="tui-sidebar-child-ul full-ul">
-                        {{#each (this.subFiles)}}
-                        <li><a href="javascript:;" data-tabs="id:'{{this.id}}',url:'{{this.link}}',title:'{{this.name}}'"><i class="{{this.iconClass}} fa-fw"></i>&nbsp;{{this.name}}</a></li>
-                        {{/each}}
+                        <li><a href="javascript:;" data-tabs="id:'userManage',url:'/be/userManage',title:'用户管理'"><i class="fa fa-user fa-fw"></i>&nbsp;用户管理</a></li>
                     </ul>
                 </li>
-                {{/each}}
             </ul>
             <ul class="tui-sidebar-ul tui-sidebar-ul-mini">
                 <li>
@@ -75,20 +67,12 @@
                         <i class="fa fa-align-justify fa-lg"></i>
                     </a>
                 </li>
-                {{#each (results)}}
                 <li>
-                    <a href="javascript:;" class="tui-sidebar-a-mini" data-toggle="tooltip" data-placement="top" title="{{this.name}}"
-                       {{#if (this.link)}}
-                       data-tabs="id:'{{this.id}}',url:'{{this.link}}',title:'{{this.name}}'"
-                       {{/if}}
-                    ><i class="{{this.iconClass}} fa-fw"></i></a>
+                    <a href="javascript:;" class="tui-sidebar-a-mini" data-toggle="tooltip" data-placement="top" title="Demo"><i class="fa fa-cog fa-fw"></i></a>
                     <ul class="tui-sidebar-child-ul mini-ul">
-                        {{#each (this.subFiles)}}
-                        <li><a href="javascript:;" data-tabs="id:'{{this.id}}',url:'{{this.link}}',title:'{{this.name}}'" data-toggle="tooltip" data-placement="top" title="{{this.name}}">{{this.name}}</a></li>
-                        {{/each}}
+                        <li><a href="javascript:;" data-tabs="id:'userManage',url:'/be/userManage',title:'用户管理'" data-toggle="tooltip" data-placement="top" title="用户管理">用户管理</a></li>
                     </ul>
                 </li>
-                {{/each}}
             </ul>
         </div>
     </div>
@@ -171,6 +155,7 @@
 <script src="depends/react/react.min.js"></script>
 <script src="depends/react/react-dom.min.js"></script>
 <script src="depends/tui/tui.all.min.js"></script>
+<script src="depends/seajs/sea.js"></script>
 <script src="javascripts/index.js"></script>
 </body>
 </html>

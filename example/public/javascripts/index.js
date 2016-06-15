@@ -21,7 +21,7 @@ $(function() {
 
       var id = 'tui-' + option.id,
           title = option.title || $(this).text(),
-          url = config.basePath + option.url;
+          url = option.url;
 
       if ($('.tui-tab-content').find('#' + id).length == 0) {
 

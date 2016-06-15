@@ -1,7 +1,7 @@
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 /**
- * TUI - 权限验证版
+ * TUI - 原生版
  */
 ;(function () {
 	if (typeof jQuery === 'undefined' || typeof React === 'undefined') {
@@ -278,8 +278,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					create: this.create,
 					update: this.props.entity.update,
 					entityData: entityData,
-					custom: this.props.entity.custom || [],
-					roleButtons: this.props.roleButtons
+					custom: this.props.entity.custom || []
 				})
 			);
 		}
@@ -351,18 +350,15 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			    custom = this.props.custom,
 			   
 			// 自定义操作
-			customButtons = [],
-			   
-			// 按钮权限
-			roleButtons = this.props.roleButtons || {};
+			customButtons = [];
 
-			if (roleButtons['create'] && keyValue === undefined) {
+			if (keyValue === undefined) {
 				createOrUpdateDOM = React.createElement(
 					'button',
 					{ type: 'button', className: 'ebtn ebtn-success ebtn-rounded tui-mr5', onClick: this.props.create },
 					'添加'
 				);
-			} else if (roleButtons['update'] && keyValue !== '' && update) {
+			} else if (keyValue !== '' && update) {
 
 				if (update.condition && typeof update.condition === 'function') {
 					// 如果有condition条件的话，符合条件的才有修改按钮，返回success表示符合
@@ -386,13 +382,11 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			for (var i = 0; i < custom.length; i++) {
 				var _custom = custom[i];
 
-				if (roleButtons[_custom.action]) {
-					customButtons.push(React.createElement(
-						'button',
-						{ type: 'button', className: 'tui-mr5 ' + _custom.className, onClick: this.customHandle, 'data-customid': i },
-						roleButtons[_custom.action].name
-					));
-				}
+				customButtons.push(React.createElement(
+					'button',
+					{ type: 'button', className: 'tui-mr5 ' + _custom.className, onClick: this.customHandle, 'data-customid': i },
+					_custom.text
+				));
 			}
 
 			return React.createElement(
@@ -954,8 +948,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					backList: this.backList,
 					entity: this.props.entity,
 					entityData: this.state.entityData,
-					currentPage: this.state.currentPage,
-					roleButtons: this.props.roleButtons
+					currentPage: this.state.currentPage
 				});
 			}
 
@@ -985,7 +978,6 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 								deleteHandle: this.deleteHandle,
 								findHandle: this.findHandle,
 								refresh: this.refresh,
-								roleButtons: this.props.roleButtons,
 								type: type
 							}))
 						)
@@ -1009,10 +1001,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		},
 		render: function () {
 			// 添加按钮
-			var roleButtons = this.props.roleButtons || {},
-			    addBtn = '';
+			var addBtn = '';
 
-			if (roleButtons['create'] && this.props.hasAdd) {
+			if (this.props.hasAdd) {
 				addBtn = React.createElement(
 					'button',
 					{ type: 'button', className: 'ebtn ebtn-success ebtn-rounded', onClick: this.props.goCreate },
@@ -1222,8 +1213,6 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		displayName: 'ToolBar',
 
 		render: function () {
-			var roleButtons = this.props.roleButtons || {};
-
 			return React.createElement(
 				'div',
 				{ className: 'tui-toolbar' },
@@ -1233,13 +1222,11 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 					switch (type) {
 						case 'button':
-							if (roleButtons[tb.action]) {
-								tbDOM = React.createElement(
-									'button',
-									{ className: (tb.className ? tb.className : 'btn btn-primary') + ' tui-mr5', type: 'button', onClick: tb.handle },
-									roleButtons[tb.action].name
-								);
-							}
+							tbDOM = React.createElement(
+								'button',
+								{ className: (tb.className ? tb.className : 'btn btn-primary') + ' tui-mr5', type: 'button', onClick: tb.handle },
+								tb.text
+							);
 							break;
 						case 'checkbox':
 							var id = tb.id || '',
@@ -1258,13 +1245,11 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 							);
 							break;
 						default:
-							if (roleButtons[tb.action]) {
-								tbDOM = React.createElement(
-									'button',
-									{ className: (tb.className ? tb.className : 'btn btn-primary') + ' tui-mr5', type: 'button', onClick: tb.handle },
-									roleButtons[tb.action].name
-								);
-							}
+							tbDOM = React.createElement(
+								'button',
+								{ className: (tb.className ? tb.className : 'btn btn-primary') + ' tui-mr5', type: 'button', onClick: tb.handle },
+								tb.text
+							);
 							break;
 					};
 					return React.createElement(
@@ -1278,8 +1263,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	});
 
 	/**
-     * 表格列组件
-     */
+  * 表格列组件
+  */
 	var TableColsComp = React.createClass({
 		displayName: 'TableColsComp',
 
@@ -1414,8 +1399,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 						handlerCheckForParent: this.props.handlerCheckForParent,
 						deleteHandle: this.props.deleteHandle,
 						findHandle: this.props.findHandle,
-						refresh: this.props.refresh,
-						roleButtons: this.props.roleButtons
+						refresh: this.props.refresh
 					};
 
 					// 标准表格
@@ -1603,15 +1587,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			   
 			// 自定义操作DOM
 			customHandles = rowHandles ? rowHandles.custom : [],
-			    customHandlesDOM = [],
-			   
-			// 按钮权限
-			roleButtons = this.props.roleButtons || {},
-			   
+			    customHandlesDOM = [];
 			// 是否父级
-			isParent = this.props.isParent,
-			    isHighest = this.props.isHighest,
-			    parentDOM = this.props.type === 'tableTree' ? React.createElement('td', null) : undefined;
+			isParent = this.props.isParent, isHighest = this.props.isHighest, parentDOM = this.props.type === 'tableTree' ? React.createElement('td', null) : undefined;
 
 			if (isParent) {
 				parentDOM = React.createElement(
@@ -1627,7 +1605,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 			if (rowHandles) {
 				// 查看
-				if (roleButtons['find'] && typeof rowHandles.find === 'function') {
+				if (typeof rowHandles.find === 'function') {
 					rowHandlesDOM.push(React.createElement(
 						'a',
 						{ href: 'javascript:;', className: 'tui-mr5', title: '详情', onClick: this.findHandle },
@@ -1640,33 +1618,30 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					for (var i = 0; i < customHandles.length; i++) {
 						var custom = customHandles[i];
 
-						if (roleButtons[custom.action]) {
-							customHandlesDOM.push(React.createElement(
-								'li',
-								null,
-								React.createElement(
-									'a',
-									{ href: 'javascript:;', onClick: this.customHandles, 'data-customid': i },
-									React.createElement('i', { className: custom.iconClass ? custom.iconClass : '' }),
-									' ',
-									custom.text
-								)
-							));
-						}
+						customHandlesDOM.push(React.createElement(
+							'li',
+							null,
+							React.createElement(
+								'a',
+								{ href: 'javascript:;', onClick: this.customHandles, 'data-customid': i },
+								React.createElement('i', { className: custom.iconClass ? custom.iconClass : '' }),
+								' ',
+								custom.text
+							)
+						));
 					}
 				}
 
 				// 删除
-				if (roleButtons['delete'] && typeof rowHandles.delete === 'function') {
+				if (typeof rowHandles.delete === 'function') {
 					customHandlesDOM.push(React.createElement(
 						'li',
 						null,
 						React.createElement(
 							'a',
-							{ href: 'javascript:;', className: 'tui-mr5', title: roleButtons['delete'].name, onClick: this.deleteHandle, style: { 'marginRight': '5px' } },
+							{ href: 'javascript:;', className: 'tui-mr5', title: '删除', onClick: this.deleteHandle, style: { 'marginRight': '5px' } },
 							React.createElement('i', { className: 'fa fa-trash-o fa-fw' }),
-							' ',
-							roleButtons['delete'].name
+							' 删除'
 						)
 					));
 				}
@@ -1957,7 +1932,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 	/**
   * 封装表格
-  * @param tableProps: { options: [表格操作参数], entity: [实体操作参数], roleButtons: [权限按钮] }
+  * @param tableProps: { options: [表格操作参数], entity: [实体操作参数] }
   */
 	var Table = function (tableProps) {
 		var options = tableProps.options;
@@ -1979,8 +1954,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					    searchbarCols = [],
 					    searchbarProps = {
 						// 是否有添加按钮
-						hasAdd: tableProps.entity && tableProps.entity.create ? true : false,
-						roleButtons: tableProps.roleButtons
+						hasAdd: tableProps.entity && tableProps.entity.create ? true : false
 					};
 
 					// 初始化筛选工具栏
@@ -2010,11 +1984,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
      * 初始化工具栏
      */
 				initToolbar = function () {
-
 					var toolbar = options.toolbar,
-					    toolbarProps = {
-						roleButtons: tableProps.roleButtons
-					};
+					    toolbarProps = {};
 
 					if (toolbar instanceof Array && toolbar.length > 0) {
 
@@ -2218,7 +2189,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	};
 
 	/**
-     * 加载提示框
+  * 加载提示框
   */
 	var LoadingModal = React.createClass({
 		displayName: 'LoadingModal',

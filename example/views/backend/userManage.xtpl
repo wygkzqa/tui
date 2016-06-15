@@ -1,0 +1,2 @@
+<div id="userManageDOM"></div>
+<script>seajs.use('/javascripts/userManage.js?random=' + Math.random());</script>
