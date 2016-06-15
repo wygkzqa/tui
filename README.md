@@ -1,6 +1,12 @@
 # TUI
 基于React的后台快速开发框架
-# 查看Demo
+# 效果预览
+![image](https://github.com/wygkzqa/tui/blob/master/previews/preview1.png)
+![image](https://github.com/wygkzqa/tui/blob/master/previews/preview2.png)
+![image](https://github.com/wygkzqa/tui/blob/master/previews/preview3.png)
+![image](https://github.com/wygkzqa/tui/blob/master/previews/preview4.png)
+![image](https://github.com/wygkzqa/tui/blob/master/previews/preview5.png)
+# 运行Demo
 ```
 git clone https://github.com/wygkzqa/tui.git
 cd tui/example
