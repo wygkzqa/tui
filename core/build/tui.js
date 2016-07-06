@@ -9,7 +9,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	}
 
 	var TUI = {
-		version: '0.20.2'
+		version: '0.20.3'
 	};
 
 	/**
@@ -1932,18 +1932,30 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 	/**
   * 封装表格
-  * @param tableProps: { options: [表格操作参数], entity: [实体操作参数] }
+  * 支持两种格式的参数
+  * 方式一: { options: [表格操作参数], entity: [实体操作参数] }
+  * 方式二: options, entity
   */
 	var Table = function (tableProps) {
-		var options = tableProps.options;
+		try {
+			if (!tableProps.options) {
+				if (arguments.length === 2) {
+					tableProps = {
+						options: arguments[0],
+						entity: arguments[1]
+					};
+				} else {
+					tableProps = {
+						options: arguments[0]
+					};
+				}
+			}
 
-		if (typeof options === 'object' && options.container) {
-
-			var container = options.container,
+			var options = tableProps.options,
+			    container = options.container,
 			    targetContainer = document.getElementById(container);
 
 			if (targetContainer) {
-
 				var formId = options.formId || 'tui-' + Math.random().toString(36).substr(2),
 				   
 				/*
@@ -2009,9 +2021,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 				TUI.danger('目标容器[' + container + ']不存在');
 				console.error('目标容器[' + container + ']不存在');
 			}
-		} else {
-			TUI.danger('TUI Table：请提供一个[container]容器');
-			console.error('TUI Table：请提供一个[container]容器');
+		} catch (e) {
+			TUI.danger('初始化Table错误,请检查参数');
+			console.error('初始化Table错误,请检查参数');
 		}
 	};
 

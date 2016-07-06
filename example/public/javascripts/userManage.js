@@ -186,8 +186,5 @@ define(function() {
         }
     };
 
-    TUI.table({
-        options: options,
-        entity: entity
-    })
+    TUI.table(options, entity);
 });

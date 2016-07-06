@@ -7,7 +7,7 @@
 	}
 
 	var TUI = {
-		version: '0.20.2'
+		version: '0.20.3'
 	};
 
 	/**
@@ -1623,87 +1623,99 @@
 
 	/**
 	 * 封装表格
-	 * @param tableProps: { options: [表格操作参数], entity: [实体操作参数] }
+	 * 支持两种格式的参数
+	 * 方式一: { options: [表格操作参数], entity: [实体操作参数] }
+	 * 方式二: options, entity
 	 */
 	var Table = function(tableProps) {
-		var options = tableProps.options;
+        try {
+            if (!tableProps.options) {
+                if (arguments.length === 2) {
+                    tableProps = {
+                        options: arguments[0],
+                        entity: arguments[1]
+                    };
+                } else {
+                    tableProps = {
+                        options: arguments[0]
+                    };
+                }
+            }
 
-		if (typeof options === 'object' && options.container) {
+            var options = tableProps.options,
+                container = options.container,
+                targetContainer = document.getElementById(container);
 
-			var container = options.container,
-				targetContainer = document.getElementById(container);
+            if (targetContainer) {
+                var formId = options.formId || 'tui-' + Math.random().toString(36).substr(2),
+                /*
+                 * 初始化搜索栏
+                 */
+                initSearchbar = function() {
+                    var	searchbar = options.searchbar,
+                        searchbarCols = [],
+                        searchbarProps= {
+                            // 是否有添加按钮
+                            hasAdd: tableProps.entity && tableProps.entity.create? true: false
+                        }
 
-			if (targetContainer) {
+                    // 初始化筛选工具栏
+                    if (searchbar instanceof Array && searchbar.length > 0) {
 
-				var formId = options.formId || 'tui-' + Math.random().toString(36).substr(2),
-				/*
-				 * 初始化搜索栏
-				 */
-					initSearchbar = function() {
-						var	searchbar = options.searchbar,
-							searchbarCols = [],
-							searchbarProps= {
-								// 是否有添加按钮
-								hasAdd: tableProps.entity && tableProps.entity.create? true: false
-							}
+                        for (var i = 0; i < searchbar.length; i++) {
+                            if (typeof searchbar[i] === 'object' && searchbar[i].field) {
+                                searchbarCols.push({field: searchbar[i].field, type: searchbar[i].type || 'text'});
+                            }
+                        }
 
-						// 初始化筛选工具栏
-						if (searchbar instanceof Array && searchbar.length > 0) {
+                        searchbarProps.searchbar = searchbar;
+                        searchbarProps.searchbarCols = searchbarCols;
+                        searchbarProps.formId = formId;
+                    } else {
 
-							for (var i = 0; i < searchbar.length; i++) {
-								if (typeof searchbar[i] === 'object' && searchbar[i].field) {
-									searchbarCols.push({field: searchbar[i].field, type: searchbar[i].type || 'text'});
-								}
-							}
+                        searchbarProps.searchbar = [];
+                    }
 
-							searchbarProps.searchbar = searchbar;
-							searchbarProps.searchbarCols = searchbarCols;
-							searchbarProps.formId = formId;
-						} else {
+                    return {
+                        searchbarProps: searchbarProps,
+                        searchbarCols: searchbarCols
+                    };
+                },
+                /*
+                 * 初始化工具栏
+                 */
+                initToolbar = function() {
+                    var toolbar = options.toolbar,
+                        toolbarProps = {};
 
-							searchbarProps.searchbar = [];
-						}
+                    if (toolbar instanceof Array && toolbar.length > 0) {
 
-						return {
-							searchbarProps: searchbarProps,
-							searchbarCols: searchbarCols
-						};
-					},
-					/*
-					 * 初始化工具栏
-					 */
-					initToolbar = function() {
-						var toolbar = options.toolbar,
-							toolbarProps = {};
+                        toolbarProps.toolbar = toolbar;
+                    } else {
 
-						if (toolbar instanceof Array && toolbar.length > 0) {
+                        toolbarProps.toolbar = [];
+                    }
 
-							toolbarProps.toolbar = toolbar;
-						} else {
+                    return {
+                        toolbarProps: toolbarProps
+                    };
+                };
 
-							toolbarProps.toolbar = [];
-						}
+                tableProps.searchbar = initSearchbar();
+                tableProps.toolbar = initToolbar();
+                tableProps.options.formId = formId;
 
-						return {
-							toolbarProps: toolbarProps
-						};
-					};
-
-				tableProps.searchbar = initSearchbar();
-				tableProps.toolbar = initToolbar();
-				tableProps.options.formId = formId;
-
-				ReactDOM.render(<TableComp {...tableProps} />,
-					document.getElementById(container)
-				);
-			} else {
-				TUI.danger('目标容器['+ container +']不存在');
-				console.error('目标容器['+ container +']不存在');
-			}
-		} else {
-			TUI.danger('TUI Table：请提供一个[container]容器');
-			console.error('TUI Table：请提供一个[container]容器');
-		}
+                ReactDOM.render(<TableComp {...tableProps} />,
+                    document.getElementById(container)
+                );
+            } else {
+                TUI.danger('目标容器['+ container +']不存在');
+                console.error('目标容器['+ container +']不存在');
+            }
+        } catch (e) {
+            TUI.danger('初始化Table错误,请检查参数');
+            console.error('初始化Table错误,请检查参数');
+        }
 	};
 
 	/**
