@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="depends/bootstrap/bootstrap.min.css">
     <!-- TUI 样式文件 已经包含fontawesome字体库 -->
     <link rel="stylesheet" href="depends/tui/tui.all.min.css">
+    <link rel="stylesheet" href="depends/simditor/simditor.css">
     <link rel="stylesheet" href="stylesheets/style.css">
 </head>
 <body>
@@ -156,6 +157,10 @@
 <script src="depends/react/react-dom.min.js"></script>
 <script src="depends/tui/tui.all.min.js"></script>
 <script src="depends/seajs/sea.js"></script>
+<script src="depends/simditor/module.js"></script>
+<script src="depends/simditor/hotkeys.js"></script>
+<script src="depends/simditor/uploader.js"></script>
+<script src="depends/simditor/simditor.js"></script>
 <script src="javascripts/index.js"></script>
 </body>
 </html>

@@ -22,7 +22,7 @@ define(function() {
         // 表格列属性
         columns: [
             { text: 'ID', field: 'id' },
-            { text: '姓名', field: 'name' },
+            { text: '姓名', field: 'name', width: '300px' },
             { text: '年龄', field: 'age' },
             { text: '性别', field: 'sex' },
             { text: '出生日期', handle: function(row) {
@@ -154,6 +154,11 @@ define(function() {
                     { text: '女', value: 'woman' },
                     { text: '其他', value: 'other' },
                 ]
+            },
+            {
+                text: '个人介绍',
+                field: 'description',
+                type: 'editor'
             }
         ],
         // 创建实体参数
